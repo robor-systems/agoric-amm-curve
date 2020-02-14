@@ -1,8 +1,10 @@
-import { rollup as rollup0 } from 'rollup';
+import rollupCJS from 'rollup';
 import path from 'path';
 import resolve0 from 'rollup-plugin-node-resolve';
 import eventualSend from '@agoric/acorn-eventual-send';
-import * as acorn from 'acorn';
+import acorn from 'acorn';
+
+const { rollup: rollup0 } = rollupCJS;
 
 const DEFAULT_MODULE_FORMAT = 'getExport';
 

@@ -2,6 +2,12 @@ import fs from 'fs';
 import process from 'process';
 import bundleSource from '@agoric/bundle-source';
 
+import url from 'url';
+import path from 'path';
+
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 async function main() {
   const { source, sourceMap } = await bundleSource(
     `${__dirname}/../src/kernel/index.js`,

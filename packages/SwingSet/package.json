@@ -2,8 +2,8 @@
   "name": "@agoric/swingset-vat",
   "version": "0.3.0",
   "description": "Vat/Container Launcher",
+  "type": "module",
   "main": "src/main.js",
-  "module": "src/index.js",
   "engines": {
     "node": ">=11.0"
   },
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "npm run-script build-kernel",
-    "build-kernel": "node -r esm scripts/build-kernel.js",
+    "build-kernel": "node scripts/build-kernel.js",
     "pack": "npm run-script build-kernel && npm pack",
     "publish": "npm run-script pack && npm publish --access public",
     "test": "npm run-script build-kernel && tape -r esm test/test-node-version.js && tape -r esm 'test/**/test*.js' | tap-spec",

@@ -3,6 +3,7 @@ import test from 'ava';
 import anylogger from 'anylogger';
 import { initSwingStore } from '@agoric/swing-store-simple';
 import { WeakRef, FinalizationRegistry } from '../src/weakref';
+import { insistVatType, parseVatSlot, makeVatSlot } from '../src/parseVatSlots';
 import { waitUntilQuiescent } from '../src/waitUntilQuiescent';
 
 import buildKernel from '../src/kernel/index';
@@ -55,8 +56,8 @@ async function buildRawVat(name, kernel, onDispatchCallback = undefined) {
   function getSyscall() {
     return syscall;
   }
-  await kernel.createTestVat(name, setup);
-  return { log, getSyscall };
+  const vatID = await kernel.createTestVat(name, setup);
+  return { log, getSyscall, vatID };
 }
 
 // The next batch of tests exercises how the kernel handles promise
@@ -827,4 +828,71 @@ test(`kernel vpid handling crossing resolutions`, async t => {
   t.is(inCList(kernel, vatB, genResultBkernel, importedGenResultBvatB), false);
   t.is(inCList(kernel, vatX, genResultBkernel, exportedGenResultBvatX), false);
   // **** end Crank 5 (B) ****
+});
+
+test(`kernel resolves cyclic promises`, async t => {
+  const endowments = makeEndowments();
+  initializeKernel({}, endowments.hostStorage);
+  const kernel = buildKernel(endowments, {}, {});
+  const { kernelKeeper } = kernel;
+  await kernel.start(undefined); // no bootstrapVatName, so no bootstrap call
+
+  let onDispatchCallback;
+  function odc(d) {
+    if (onDispatchCallback) {
+      onDispatchCallback(d);
+    }
+  }
+  // vatA is the subscriber which hears about the resolution
+  const { log, vatID: vatA } = await buildRawVat('vatA', kernel, odc);
+  const vatKeeper = kernelKeeper.getVatKeeper(vatA);
+
+  // We begin by manipulating the kernel promise tables to construct our pair
+  // of resolved promises directly, rather than using an additional vat to
+  // export and resolve them. We also arrange for vatA to know about (and be
+  // subscribed to) promise2.
+
+  // promise1 is resolved to an array containing promise2
+  // promise2 is resolved to an array containing promise1
+  const kpid1 = kernelKeeper.addKernelPromise();
+  kernelKeeper.incrementRefCount(kpid1);
+  const kpid2 = kernelKeeper.addKernelPromise();
+  kernelKeeper.incrementRefCount(kpid2);
+
+  const kres1 = capargs(slot0arg, [kpid2]);
+  kernelKeeper.fulfillKernelPromiseToData(kpid1, kres1);
+  const kres2 = capargs(slot0arg, [kpid1]);
+  kernelKeeper.fulfillKernelPromiseToData(kpid2, kres2);
+
+  const vpid2 = vatKeeper.mapKernelSlotToVatSlot(kpid2);
+  kernelKeeper.addSubscriberToPromise(kpid2, vatA);
+
+  // Now we queue a notify for the promise, and allow the run-queue to drain.
+  kernel.notify(vatA, kpid2);
+  await kernel.run();
+
+  // when kpid1 is added to the clist, it should get the next vpid
+  insistVatType('promise', vpid2);
+  const vpid1 = makeVatSlot('promise', false, parseVatSlot(vpid2).id + 1);
+
+  // We expect the vat to receive a single dispatch.notify, which ought to
+  // contain both promiseB and promiseA in a single batch.
+  t.deepEqual(
+    {
+      type: 'notify',
+      resolutions: {
+        ...oneResolution(vpid2, false, capargs(slot0arg, [vpid1])),
+        ...oneResolution(vpid1, false, capargs(slot0arg, [vpid2])),
+      },
+    },
+    log.shift(),
+  );
+  t.deepEqual(log, []);
+
+  // we also expect the vat's c-list to *not* have entries for either
+  // promise: both should be retired
+  t.is(clistKernelToVat(kernel, vatA, kpid1), undefined);
+  t.is(clistVatToKernel(kernel, vatA, vpid1), undefined);
+  t.is(clistKernelToVat(kernel, vatA, kpid2), undefined);
+  t.is(clistVatToKernel(kernel, vatA, vpid2), undefined);
 });

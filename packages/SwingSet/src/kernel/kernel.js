@@ -978,6 +978,8 @@ export default function buildKernel(
       return { log: ephemeral.log, pendingDecrefs, ...kernelKeeper.dump() };
     },
     kdebugEnable,
+    kernelKeeper,
+    notify,
 
     addImport,
     addExport,

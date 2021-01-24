@@ -215,6 +215,17 @@ function isPassByCopyRecord(val) {
   }
   const descEntries = Object.entries(Object.getOwnPropertyDescriptors(val));
   if (descEntries.length === 0) {
+    // empty non-array objects must be registered with Data or Far/Remotable
+    if (!remotableToInterface.has(val) && !registeredData.has(val)) {
+      // Warn when we see one. Unfortunately we can't provide much of a hint
+      // about where the problem is coming from: we're in a different turn
+      // than the eventual-send that created it, so we don't have a stack,
+      // and we aren't keeping breadcrumbs as we traverse the object graph,
+      // so we can't provide a relative path from the value passed to
+      // serialize(). And the object is empty, so it won't have any clues
+      // inside, either.
+      console.log(`--- @@marshal: empty object without Data/Far/Remotable`);
+    }
     // empty non-array objects are pass-by-remote, not pass-by-copy
     return false;
   }

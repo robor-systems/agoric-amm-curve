@@ -11,4 +11,5 @@ export {
   makeMarshal,
   Remotable,
   Far,
+  Data,
 } from './src/marshal';

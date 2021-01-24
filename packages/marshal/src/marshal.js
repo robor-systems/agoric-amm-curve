@@ -17,6 +17,11 @@ export const REMOTE_STYLE = 'presence';
 export { mustPassByRemote as mustPassByPresence };
 
 /**
+ * @type {WeakSet<Object>}
+ */
+const registeredData = new WeakSet();
+
+/**
  * @type {WeakMap<Object, InterfaceSpec>}
  */
 const remotableToInterface = new WeakMap();
@@ -958,3 +963,18 @@ const Far = (farName, remotable = {}) =>
 
 harden(Far);
 export { Far };
+
+/**
+ * Mark otherwise-ambiguous objects as pass-by-copy.
+ *
+ * @param {object} obj the object to be pass-by-copy
+ * @returns {object} the same object, hardened
+ */
+const Data = obj => {
+  harden(obj);
+  registeredData.add(obj);
+  return obj;
+};
+
+harden(Data);
+export { Data };

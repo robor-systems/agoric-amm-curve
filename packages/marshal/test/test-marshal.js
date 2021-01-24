@@ -3,6 +3,7 @@ import test from 'ava';
 import {
   Remotable,
   Far,
+  Data,
   getInterfaceOf,
   makeMarshal,
   mustPassByPresence,
@@ -235,4 +236,38 @@ test('Remotable/getInterfaceOf', t => {
   t.is(getInterfaceOf(p2), 'Alleged: Thing', `interface is Thing`);
   t.is(p2.name(), 'cretin', `name() method is presence`);
   t.is(p2.birthYear(2020), 1956, `birthYear() works`);
+});
+
+test('Data', t => {
+  function convertValToSlot(_val) {
+    return 'slot';
+  }
+  const m = makeMarshal(convertValToSlot);
+  const ser = val => m.serialize(val);
+
+  const d1 = {}; // rejected because it is not hardened
+  const d2 = harden({}); // warning because it is not registered
+  const d3 = Data({}); // currently pass-by-ref, should become pass-by-copy
+  const d4 = Far('iface', {}); // pass-by-reference
+
+  const noIfaceBody = { '@qclass': 'slot', index: 0 };
+  const yesIfaceBody = { '@qclass': 'slot', iface: 'Alleged: iface', index: 0 };
+
+  t.throws(
+    () => ser(d1),
+    { message: /Cannot pass non-frozen objects/ },
+    'non-frozen data cannot be serialized',
+  );
+
+  const ser2 = ser(d2);
+  t.deepEqual(JSON.parse(ser2.body), noIfaceBody);
+  t.deepEqual(ser2.slots, ['slot']);
+
+  const ser3 = ser(d3);
+  t.deepEqual(JSON.parse(ser3.body), noIfaceBody); // for now
+  t.deepEqual(ser3.slots, ['slot']);
+
+  const ser4 = ser(d4);
+  t.deepEqual(JSON.parse(ser4.body), yesIfaceBody);
+  t.deepEqual(ser4.slots, ['slot']);
 });

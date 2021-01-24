@@ -3,6 +3,7 @@ export function buildRootDeviceNode({
   testLog: log,
   getDeviceState,
   setDeviceState,
+  Data,
 }) {
   return harden({
     method1(arg) {
@@ -10,7 +11,7 @@ export function buildRootDeviceNode({
       return 'done';
     },
     method2() {
-      const d2 = harden({});
+      const d2 = Data({});
       const d3 = harden({
         method3(arg) {
           log(`method3 ${arg === d2}`);

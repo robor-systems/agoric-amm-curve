@@ -1,6 +1,6 @@
 /* eslint-disable no-use-before-define */
 
-import { makeMarshal, Far } from '@agoric/marshal';
+import { makeMarshal, Far, Data } from '@agoric/marshal';
 import { assert } from '@agoric/assert';
 import { assertKnownOptions } from '../assertOptions';
 import { insistVatID } from './id';
@@ -148,7 +148,7 @@ export function initializeKernel(config, hostStorage, verbose = false) {
     const drefs = new Map();
     const deviceObj0s = {};
     for (const [name, deviceID] of kernelKeeper.getDevices()) {
-      const dref = harden({});
+      const dref = Data({});
       deviceObj0s[name] = dref;
       const devSlot = makeVatSlot('device', true, 0);
       const devKeeper = kernelKeeper.allocateDeviceKeeperIfNeeded(deviceID);
@@ -179,7 +179,7 @@ export function initializeKernel(config, hostStorage, verbose = false) {
     const m = makeMarshal(convertValToSlot, undefined, {
       marshalName: 'kernel:bootstrap',
     });
-    const args = harden([vatObj0s, deviceObj0s]);
+    const args = harden([Data(vatObj0s), Data(deviceObj0s)]);
     // queueToExport() takes kernel-refs (ko+NN, kd+NN) in s.slots
     const rootSlot = makeVatRootObjectSlot();
     const resultKpid = doQueueToExport(

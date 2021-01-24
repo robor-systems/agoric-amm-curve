@@ -1,7 +1,7 @@
 import { E } from '@agoric/eventual-send';
 
 export function buildRootObject(vatPowers, vatParameters) {
-  const { D, testLog: log } = vatPowers;
+  const { D, testLog: log, Data } = vatPowers;
   return harden({
     async bootstrap(vats, devices) {
       const { argv } = vatParameters;
@@ -18,7 +18,7 @@ export function buildRootObject(vatPowers, vatParameters) {
         log(`calling d2.method3`);
         // devices can't yet do sendOnly on pass-by-presence objects, but
         // they should still be able to accept and return them
-        const o = harden({});
+        const o = Data({});
         const ret = D(devices.d2).method3(o);
         log(`ret ${ret === o}`);
       } else if (argv[0] === '4') {

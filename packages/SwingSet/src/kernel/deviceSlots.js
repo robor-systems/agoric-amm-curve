@@ -1,4 +1,9 @@
-import { Remotable, mustPassByPresence, makeMarshal } from '@agoric/marshal';
+import {
+  Remotable,
+  mustPassByPresence,
+  makeMarshal,
+  Data,
+} from '@agoric/marshal';
 import { assert, details } from '@agoric/assert';
 import { insistVatType, makeVatSlot, parseVatSlot } from '../parseVatSlots';
 import { insistCapData } from '../capdata';
@@ -167,6 +172,7 @@ export function makeDeviceSlots(
     endowments,
     deviceParameters,
     serialize: m.serialize, // We deliberately do not provide m.deserialize
+    Data,
   });
   mustPassByPresence(rootObject);
 

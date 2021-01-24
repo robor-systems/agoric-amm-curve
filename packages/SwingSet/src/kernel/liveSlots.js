@@ -3,6 +3,7 @@
 import {
   Remotable,
   Far,
+  Data,
   getInterfaceOf,
   mustPassByPresence,
   makeMarshal,
@@ -620,6 +621,7 @@ export function makeLiveSlots(
     getInterfaceOf,
     Remotable,
     Far,
+    Data,
     makeMarshal,
   };
   const r = build(syscall, forVatID, cacheSize, allVatPowers, vatParameters);

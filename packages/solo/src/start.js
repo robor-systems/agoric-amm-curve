@@ -144,7 +144,8 @@ async function buildSwingset(
     }
     await initializeSwingset(config, argv, storage);
   }
-  const controller = await makeSwingsetController(storage, deviceEndowments);
+  const slogFile = process.env.CLIENTSLOGFILE;
+  const controller = await makeSwingsetController(storage, deviceEndowments, { slogFile });
 
   async function saveState() {
     const ms = JSON.stringify(mbs.exportToData());

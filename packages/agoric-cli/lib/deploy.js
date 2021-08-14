@@ -223,12 +223,33 @@ export { bootPlugin } from ${JSON.stringify(absPath)};
             };
           }
 
-          // use a dynamic import to load the deploy script, it is unconfined
-          // eslint-disable-next-line import/no-dynamic-require
-          const mainNS = require(moduleFile);
-          // TODO Node.js ESM support if package.json of template says "type":
-          // "module":
-          //   const mainNS = await import(pathResolve(moduleFile));
+          // Use a dynamic import to load the deploy script.
+          // It is unconfined.
+
+          // Use Node.js ESM support if package.json of template says "type":
+          // "module".
+          const packageFile = pathResolve('package.json');
+          const packageText = await fs
+            .readFile(packageFile, 'utf-8')
+            .catch(cause => {
+              throw new Error(
+                `Expected a package.json beside deploy script ${moduleFile}`,
+                { cause },
+              );
+            });
+          const packageDesc = JSON.parse(packageText);
+          const nativeEsm = packageDesc.type === 'module';
+          console.log(
+            `Deploy script will run with ${
+              nativeEsm ? 'Node.js ESM' : 'standardthings/esm emulation'
+            }`,
+          );
+
+          const modulePath = pathResolve(moduleFile);
+          const mainNS = nativeEsm
+            ? await import(modulePath)
+            : // eslint-disable-next-line import/no-dynamic-require
+              require(modulePath);
           const main = mainNS.default;
           if (typeof main !== 'function') {
             console.error(

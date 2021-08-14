@@ -35,9 +35,13 @@ export default async function initMain(_progname, rawArgs, priv, opts) {
   }
 
   if (
-    await pspawn('git', ['clone', '--origin=upstream', dappURL, DIR, ...dappBranch], {
-      stdio: 'inherit',
-    })
+    await pspawn(
+      'git',
+      ['clone', '--origin=upstream', dappURL, DIR, ...dappBranch],
+      {
+        stdio: 'inherit',
+      },
+    )
   ) {
     throw Error('cannot clone');
   }

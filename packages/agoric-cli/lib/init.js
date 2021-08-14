@@ -29,8 +29,13 @@ export default async function initMain(_progname, rawArgs, priv, opts) {
 
   const pspawn = makePspawn({ log, chalk, spawn });
 
+  let dappBranch = [];
+  if (opts.dappBranch) {
+    dappBranch = ['-b', opts.dappBranch];
+  }
+
   if (
-    await pspawn('git', ['clone', '--origin=upstream', dappURL, DIR], {
+    await pspawn('git', ['clone', '--origin=upstream', dappURL, DIR, ...dappBranch], {
       stdio: 'inherit',
     })
   ) {

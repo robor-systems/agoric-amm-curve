@@ -185,5 +185,4 @@ async function testRemotePeg(t) {
   t.assert(!stillIsLive, 'payment is consumed');
 }
 
-test('remote peg', t =>
-  testRemotePeg(t).catch(err => t.not(err, err, 'unexpected exception')));
+test('remote peg', t => testRemotePeg(t));

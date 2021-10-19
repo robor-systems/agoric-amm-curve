@@ -22,7 +22,7 @@ export default function initBasedir(
   egresses,
   opts = {},
 ) {
-  const { env = process.environment } = opts;
+  const { env = process.env } = opts;
   const {
     wallet = DEFAULT_WALLET,
     defaultManagerType = env.SWINGSET_WORKER_TYPE || 'xs-worker',

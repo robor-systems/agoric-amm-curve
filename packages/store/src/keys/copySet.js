@@ -2,7 +2,6 @@
 
 import {
   assertChecker,
-  compareRank,
   getTag,
   makeTagged,
   passStyleOf,

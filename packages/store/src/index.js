@@ -13,8 +13,10 @@ export { makeSetOps } from './keys/merge-set-operators.js';
 
 export {
   M,
+  getRankCover,
   isPattern,
   assertPattern,
+  assertKeyPattern,
   matches,
   fit,
 } from './patterns/patternMatchers.js';

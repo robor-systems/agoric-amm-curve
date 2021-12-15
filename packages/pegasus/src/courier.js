@@ -1,3 +1,4 @@
+// @ts-check
 import { details as X } from '@agoric/assert';
 
 import { AmountMath } from '@agoric/ertp';
@@ -19,7 +20,7 @@ export const getCourierPK = (key, keyToCourierPK) => {
 
   // This is the first packet for this denomination.
   // Create a new Courier promise kit for it.
-  const courierPK = makeOncePromiseKit(() => X`${key} already pegged`);
+  const courierPK = makeOncePromiseKit(X`${key} already pegged`);
 
   keyToCourierPK.init(key, courierPK);
   return courierPK;

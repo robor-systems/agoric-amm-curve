@@ -86,7 +86,7 @@ export const makeNotifierKit = (...args) => {
     ...baseNotifier,
   });
 
-  const updater = harden({
+  const updater = Far('updater', {
     updateState(state) {
       if (final()) {
         throw new Error('Cannot update state after termination.');
@@ -156,7 +156,6 @@ export const makeNotifierKit = (...args) => {
  * @returns {Notifier<T>}
  */
 export const makeNotifierFromAsyncIterable = asyncIterableP => {
-  /** @type {ERef<AsyncIterator<T>>} */
   const iteratorP = E(asyncIterableP)[Symbol.asyncIterator]();
 
   /** @type {Promise<UpdateRecord<T>>|undefined} */

@@ -64,4 +64,6 @@ lockdown({
   // this may be a development accident that should be fixed before merging.
   //
   // consoleTaming: 'unsafe',
+
+  domainTaming: 'unsafe',
 });

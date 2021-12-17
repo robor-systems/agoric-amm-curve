@@ -76,9 +76,15 @@ export const lockdown = defaultOptions => {
       console.error('', err, options);
       throw err;
     }
-    rawLockdown(options);
+    rawLockdown({
+      ...options,
+      domainTaming: 'unsafe',
+    });
   } else if (defaultOptions) {
-    rawLockdown(defaultOptions);
+    rawLockdown({
+      ...defaultOptions,
+      domainTaming: 'unsafe',
+    });
   } else {
     rawLockdown({
       // The default `{errorTaming: 'safe'}` setting, if possible, redacts the
@@ -138,6 +144,8 @@ export const lockdown = defaultOptions => {
       // this may be a development accident that MUST be fixed before merging.
       //
       // consoleTaming: 'unsafe',
+
+      domainTaming: 'unsafe',
     });
   }
 

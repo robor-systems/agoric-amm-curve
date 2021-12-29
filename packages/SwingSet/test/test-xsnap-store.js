@@ -7,7 +7,7 @@ import { type as osType } from 'os';
 import tmp from 'tmp';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import test from 'ava';
-import { xsnap } from '@agoric/xsnap';
+import { xsnap, recordXSnap } from '@agoric/xsnap';
 import { makeSnapStore, makeSnapStoreIO } from '@agoric/swing-store';
 import { resolve as importMetaResolve } from 'import-meta-resolve';
 
@@ -43,15 +43,20 @@ const snapSize = {
  * @param {string} script to execute
  */
 async function bootWorker(name, handleCommand, script) {
-  const worker = xsnap({
-    os: osType(),
-    spawn,
-    handleCommand,
-    name,
-    stdout: 'inherit',
-    stderr: 'inherit',
-    // debug: !!env.XSNAP_DEBUG,
-  });
+  const workerTrace = '/tmp/xsnap-trace/';
+  const worker = recordXSnap(
+    {
+      os: osType(),
+      spawn,
+      handleCommand,
+      name,
+      stdout: 'inherit',
+      stderr: 'inherit',
+      // debug: !!env.XSNAP_DEBUG,
+    },
+    workerTrace,
+    { writeFileSync: fs.writeFileSync },
+  );
 
   await worker.evaluate(script);
   return worker;
@@ -152,7 +157,7 @@ test('XS + SES snapshots are long-term deterministic', async t => {
   const h1 = await store.save(vat.snapshot);
   t.is(
     h1,
-    '5074bc800f9d6f1e1821c2a50214f9ccdf4d45507e44409455f3da08d937e8a1',
+    '310ca525b8f14d57acfd81351520cf5b62b568b189899a45ecb72172d122adc5',
     'initial snapshot',
   );
 
@@ -164,7 +169,7 @@ test('XS + SES snapshots are long-term deterministic', async t => {
   const h2 = await store.save(vat.snapshot);
   t.is(
     h2,
-    '0151a11a3e45805653fa51edf6320741f926fbcd4814094fd0bba9cdf3d9e2ce',
+    'd872c6a6326a705c1ae149b6f7d3024fa91ca7f8aaafbba32f38e221500f1a3d',
     'after SES boot - sensitive to SES-shim, XS, and supervisor',
   );
 
@@ -172,7 +177,7 @@ test('XS + SES snapshots are long-term deterministic', async t => {
   const h3 = await store.save(vat.snapshot);
   t.is(
     h3,
-    'f90f3c84cfb1b749a2e5d80943204a04503a73db2fb41b674b56f99715007945',
+    '345d962b2ae5779d79f02fb0e5f6315c136f83ee551374e73af4fdc99cf0b5f1',
     'after use of harden() - sensitive to SES-shim, XS, and supervisor',
   );
 });

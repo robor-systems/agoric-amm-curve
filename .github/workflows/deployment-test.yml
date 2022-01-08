@@ -55,6 +55,7 @@ jobs:
         set -e
         sudo mv "$GITHUB_WORKSPACE/testnet-load-generator" /usr/src/testnet-load-generator
         sudo mv "$GITHUB_WORKSPACE" /usr/src/agoric-sdk
+        ln -s /usr/src/agoric-sdk/packages/deployment/bin/ag-setup-cosmos /usr/local/bin/ag-setup-cosmos
         ln -s /usr/src/agoric-sdk "$GITHUB_WORKSPACE"
       working-directory: /
 

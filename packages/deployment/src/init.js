@@ -127,6 +127,7 @@ const makeProviders = ({ env, inquirer, wr, setup, fetch, needBacktick }) => ({
         // Ignore
       }
 
+      // Tolerate NaN returned by any parseInt errors.
       if (!(cgroupVersion >= 2)) {
         // Older cgroup version, we need to mount `/sys/fs/cgroup` explicitly
         // for our Agoric deployment Docker containers' systemd.

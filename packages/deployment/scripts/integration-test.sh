@@ -41,7 +41,7 @@ then
   $AG_SETUP_COSMOS_HOME/faucet-helper.sh add-egress \
     loadgen $(cat _agstate/agoric-servers/testnet-8000/ag-cosmos-helper-address)
   SDK_BUILD=0 SDK_SRC=/usr/src/agoric-sdk OUTPUT_DIR="$RESULTSDIR" ./start.sh \
-    --no-stage.save-storage --stages=3 --stage.duration=3 \
+    --no-stage.save-storage --stages=3 --stage.duration=4 \
     --profile=testnet "--testnet-origin=file://$RESULTSDIR" \
     --no-reset
 fi

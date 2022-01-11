@@ -1076,14 +1076,15 @@ function build(
   }
 
   const vatGlobals = harden({
-    makeVirtualScalarWeakMap: vom.makeVirtualScalarWeakMap,
-    makeKind: vom.makeKind,
-    makeDurableKind: vom.makeDurableKind,
-    makeScalarBigMapStore: collectionManager.makeScalarBigMapStore,
-    makeScalarWeakBigMapStore: collectionManager.makeScalarWeakBigMapStore,
-    makeScalarBigSetStore: collectionManager.makeScalarBigSetStore,
-    makeScalarWeakBigSetStore: collectionManager.makeScalarWeakBigSetStore,
-    M: collectionManager.M,
+    VatData: {
+      makeVirtualScalarWeakMap: vom.makeVirtualScalarWeakMap,
+      makeKind: vom.makeKind,
+      makeDurableKind: vom.makeDurableKind,
+      makeScalarBigMapStore: collectionManager.makeScalarBigMapStore,
+      makeScalarWeakBigMapStore: collectionManager.makeScalarWeakBigMapStore,
+      makeScalarBigSetStore: collectionManager.makeScalarBigSetStore,
+      makeScalarWeakBigSetStore: collectionManager.makeScalarWeakBigSetStore,
+    },
   });
 
   const inescapableGlobalProperties = harden({

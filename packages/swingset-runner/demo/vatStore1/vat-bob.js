@@ -1,5 +1,7 @@
-/* global makeKind */
+/* global VatData */
 import { Far } from '@agoric/marshal';
+
+const { makeKind } = VatData;
 
 const p = console.log;
 

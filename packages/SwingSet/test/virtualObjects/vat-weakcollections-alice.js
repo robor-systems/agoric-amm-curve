@@ -1,5 +1,7 @@
-/* global makeKind */
+/* global VatData */
 import { Far } from '@agoric/marshal';
+
+const { makeKind } = VatData;
 
 function makeHolderInstance(state) {
   function init(value) {

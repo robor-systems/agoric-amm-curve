@@ -1,6 +1,8 @@
-/* global makeKind */
+/* global VatData */
 import { E } from '@agoric/eventual-send';
 import { Far } from '@agoric/marshal';
+
+const { makeKind } = VatData;
 
 export function buildRootObject(_vatPowers) {
   function makeThingInstance(state) {

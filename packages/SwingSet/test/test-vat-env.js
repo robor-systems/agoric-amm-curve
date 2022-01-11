@@ -19,17 +19,17 @@ function makeThingInstance(_state) {
 }
 
 test('makeKind is in the vat environment', t => {
-  // TODO: configure eslint to know that makeKind is a global
+  // TODO: configure eslint to know that VatData is a global
   // eslint-disable-next-line no-undef
-  const thingMaker = makeKind(makeThingInstance);
+  const thingMaker = VatData.makeKind(makeThingInstance);
   const thing1 = thingMaker('thing-1');
   t.is(thing1.ping(), 4);
 });
 
 test('makeVirtualScalarWeakMap is in the vat environment', t => {
-  // TODO: configure eslint to know that makeVirtualScalarWeakMap is a global
+  // TODO: configure eslint to know that VatData is a global
   // eslint-disable-next-line no-undef
-  const s1 = makeVirtualScalarWeakMap();
+  const s1 = VatData.makeVirtualScalarWeakMap();
   const k1 = { role: 'key' };
   const o1 = { size: 10, color: 'blue' };
   s1.init(k1, o1);

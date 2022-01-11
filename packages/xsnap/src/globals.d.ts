@@ -4,5 +4,9 @@ namespace global {
   declare var issueCommand: (msg: ArrayBuffer) => ArrayBuffer;
 }
 
-declare let makeKind: function;
-declare let makeVirtualScalarWeakMap: function;
+interface VatData {
+  makeKind: function;
+  makeVirtualScalarWeakMap: function;
+}
+
+declare let VatData: VatData;

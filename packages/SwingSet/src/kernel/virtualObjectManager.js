@@ -698,19 +698,14 @@ export function makeVirtualObjectManager(
       initializationsInProgress.delete(initialData);
       const rawData = {};
       for (const prop of Object.getOwnPropertyNames(initialData)) {
-        try {
-          const data = serialize(initialData[prop]);
-          if (durable) {
-            data.slots.map(vref =>
-              assert(vrm.isDurable(vref), X`value for ${prop} is not durable`),
-            );
-          }
-          data.slots.map(vrm.addReachableVref);
-          rawData[prop] = data;
-        } catch (e) {
-          console.error(`state property ${String(prop)} is not serializable`);
-          throw e;
+        const data = serialize(initialData[prop]);
+        if (durable) {
+          data.slots.map(vref =>
+            assert(vrm.isDurable(vref), X`value for ${prop} is not durable`),
+          );
         }
+        data.slots.map(vrm.addReachableVref);
+        rawData[prop] = data;
       }
       innerSelf.rawData = rawData;
       for (const prop of Object.getOwnPropertyNames(initialData)) {

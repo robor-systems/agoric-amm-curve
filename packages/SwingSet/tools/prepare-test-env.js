@@ -12,11 +12,15 @@ import './install-ses-debug.js';
 import { makeFakeVirtualObjectManager } from './fakeVirtualSupport.js';
 
 const {
+  makeVirtualScalarWeakMap,
   makeKind,
   makeDurableKind,
-  makeVirtualScalarWeakMap,
 } = makeFakeVirtualObjectManager({ cacheSize: 3 });
 
-globalThis.makeKind = makeKind;
-globalThis.makeDurableKind = makeDurableKind;
-globalThis.makeVirtualScalarWeakMap = makeVirtualScalarWeakMap;
+const VatData = harden({
+  makeVirtualScalarWeakMap,
+  makeKind,
+  makeDurableKind,
+});
+
+globalThis.VatData = VatData;

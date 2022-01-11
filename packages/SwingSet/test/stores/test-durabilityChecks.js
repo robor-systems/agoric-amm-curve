@@ -16,11 +16,8 @@ function makeHolderInstance(state) {
       state.held = value;
     },
     self: Far('holder', {
-      setValue(value) {
+      hold(value) {
         state.held = value;
-      },
-      getValue() {
-        return state.held;
       },
     }),
   };
@@ -73,21 +70,12 @@ function m(s) {
 
 // prettier-ignore
 test('durability checks', t => {
-  function failKey(f) {
-    t.throws(f, m('key is not durable'));
-  }
-
-  function failVal(f) {
-    t.throws(f, m('value is not durable'));
-  }
-
-  function passKey(f) {
-    t.notThrows(f);
-  }
-
-  function passVal(f) {
-    t.notThrows(f);
-  }
+  const failKey = f => t.throws(f, m('key is not durable'));
+  const failVal = f => t.throws(f, m('value is not durable'));
+  const failHold = f => t.throws(f, m('value for "held" is not durable'));
+  const passKey = f => t.notThrows(f);
+  const passVal = f => t.notThrows(f);
+  const passHold = f => t.notThrows(f);
 
   const virtualMap = makeScalarBigMapStore('vmap');
   const durableMap = makeScalarBigMapStore('dmap', { durable: true });
@@ -177,4 +165,52 @@ test('durability checks', t => {
   failKey(() => durableSet.add(aRemotableObject));
   failKey(() => durableSet.add(aVirtualStore));
   passKey(() => durableSet.add(aDurableStore));
+
+  const virtualHolder = virtualHolderMaker();
+
+  passHold(() => virtualHolderMaker(aString));
+  passHold(() => virtualHolderMaker(aVirtualObject));
+  passHold(() => virtualHolderMaker(aDurableObject));
+  passHold(() => virtualHolderMaker(aRemotableObject));
+  passHold(() => virtualHolderMaker(aVirtualStore));
+  passHold(() => virtualHolderMaker(aDurableStore));
+  passHold(() => virtualHolderMaker(anObjectFullOfVirtualStuff));
+  passHold(() => virtualHolderMaker(anArrayFullOfVirtualStuff));
+  passHold(() => virtualHolderMaker(anObjectFullOfDurableStuff));
+  passHold(() => virtualHolderMaker(anArrayFullOfDurableStuff));
+
+  passHold(() => virtualHolder.hold(aString));
+  passHold(() => virtualHolder.hold(aVirtualObject));
+  passHold(() => virtualHolder.hold(aDurableObject));
+  passHold(() => virtualHolder.hold(aRemotableObject));
+  passHold(() => virtualHolder.hold(aVirtualStore));
+  passHold(() => virtualHolder.hold(aDurableStore));
+  passHold(() => virtualHolder.hold(anObjectFullOfVirtualStuff));
+  passHold(() => virtualHolder.hold(anArrayFullOfVirtualStuff));
+  passHold(() => virtualHolder.hold(anObjectFullOfDurableStuff));
+  passHold(() => virtualHolder.hold(anArrayFullOfDurableStuff));
+
+  const durableHolder = durableHolderMaker();
+
+  passHold(() => durableHolderMaker(aString));
+  failHold(() => durableHolderMaker(aVirtualObject));
+  passHold(() => durableHolderMaker(aDurableObject));
+  failHold(() => durableHolderMaker(aRemotableObject));
+  failHold(() => durableHolderMaker(aVirtualStore));
+  passHold(() => durableHolderMaker(aDurableStore));
+  failHold(() => durableHolderMaker(anObjectFullOfVirtualStuff));
+  failHold(() => durableHolderMaker(anArrayFullOfVirtualStuff));
+  passHold(() => durableHolderMaker(anObjectFullOfDurableStuff));
+  passHold(() => durableHolderMaker(anArrayFullOfDurableStuff));
+
+  passHold(() => durableHolder.hold(aString));
+  failHold(() => durableHolder.hold(aVirtualObject));
+  passHold(() => durableHolder.hold(aDurableObject));
+  failHold(() => durableHolder.hold(aRemotableObject));
+  failHold(() => durableHolder.hold(aVirtualStore));
+  passHold(() => durableHolder.hold(aDurableStore));
+  failHold(() => durableHolder.hold(anObjectFullOfVirtualStuff));
+  failHold(() => durableHolder.hold(anArrayFullOfVirtualStuff));
+  passHold(() => durableHolder.hold(anObjectFullOfDurableStuff));
+  passHold(() => durableHolder.hold(anArrayFullOfDurableStuff));
 });

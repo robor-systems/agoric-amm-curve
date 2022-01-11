@@ -1,5 +1,7 @@
-/* global makeKind makeVirtualScalarWeakMap */
+/* global VatData */
 import { Far } from '@agoric/marshal';
+
+const { makeKind, makeVirtualScalarWeakMap } = VatData;
 
 const stuff = makeVirtualScalarWeakMap();
 

@@ -1,7 +1,8 @@
+// eslint-disable-next-line import/order
 import { test } from '../../tools/prepare-test-env-ava.js';
 
-// eslint-disable-next-line import/order
 import { Far } from '@agoric/marshal';
+import { M } from '@agoric/store';
 import { buildSyscall, makeDispatch } from '../liveslots-helpers.js';
 import {
   capargs,
@@ -11,6 +12,7 @@ import {
   makeRetireExports,
   makeBringOutYourDead,
 } from '../util.js';
+import engineGC from '../../src/engine-gc.js';
 
 // These tests follow the model described in
 // ../virtualObjects/test-virtualObjectGC.js
@@ -21,12 +23,12 @@ let aWeakSetStore;
 const mainHolderIdx = 1;
 
 function buildRootObject(vatPowers) {
+  const { VatData } = vatPowers;
   const {
     makeScalarBigMapStore,
     makeScalarWeakBigMapStore,
     makeScalarWeakBigSetStore,
-    M,
-  } = vatPowers;
+  } = VatData;
 
   let nextStoreNumber = 1;
   let heldStore = null;
@@ -255,6 +257,28 @@ function setupLifecycleTest(t) {
   async function dispatchMessage(message, args = capargs([])) {
     const rp = nextRP();
     await dispatch(makeMessage(root, message, args, rp));
+    // XXX TERRIBLE HACK WARNING XXX The following GC call is terrible but
+    // apparently necessary.  Without it, the 'store refcount management 1' test
+    // will fail under Node 16 if this test file is run non-selectively (that
+    // is, without the "-m 'store refcount management 1'" flag) even though all
+    // tests will succeed under Node 14 regardless of how initiated and the
+    // single test will succeed under Node 16 if run standalone.
+    //
+    // This nonsense suggests that under Node 16 there may be a problem with
+    // Ava's logic for running multiple tests that is allowing one test to side
+    // effect others even though they are nominally run sequentially.  In
+    // particular, forcing a GC at the start of setupLifecycleTest (which you
+    // would think would reset the heap to a consistent initial state at the
+    // start of each test) does not change the circumstances of the failure, but
+    // inserting the GC after message dispatch does.  None of this makes any
+    // sense that I can discern, but I don't have time to diagnose this right
+    // now.  Since this hack is part of mocking the kernel side here anyway, I
+    // suspect that the likely large investment in time and effort to puzzle out
+    // what's going on here won't have much payoff; it seems plausible that
+    // whatever the issue is it may only impact the mock environment.
+    // Nevertheless there's a chance we may be courting some deeper problem,
+    // hence this comment.
+    engineGC();
     await dispatch(makeBringOutYourDead());
     return rp;
   }

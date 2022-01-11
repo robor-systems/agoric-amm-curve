@@ -136,7 +136,10 @@ let aWeakMap;
 let aWeakSet;
 
 function buildRootObject(vatPowers) {
-  const { makeKind, WeakMap, WeakSet } = vatPowers;
+  const { VatData, WeakMap, WeakSet } = vatPowers;
+
+  const { makeKind } = VatData;
+
   function makeThingInstance(state) {
     return {
       init(label) {

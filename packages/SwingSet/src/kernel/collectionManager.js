@@ -886,7 +886,6 @@ export function makeCollectionManager(
     makeScalarWeakBigMapStore,
     makeScalarBigSetStore,
     makeScalarWeakBigSetStore,
-    M,
     testHooks,
   });
 }

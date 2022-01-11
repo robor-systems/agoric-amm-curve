@@ -1,7 +1,8 @@
+// eslint-disable-next-line import/order
 import { test } from '../../tools/prepare-test-env-ava.js';
 
-// eslint-disable-next-line import/order
 import { Far } from '@agoric/marshal';
+import { M } from '@agoric/store';
 import { makeFakeCollectionManager } from '../../tools/fakeVirtualSupport.js';
 
 const {
@@ -9,7 +10,6 @@ const {
   makeScalarWeakBigMapStore,
   makeScalarBigSetStore,
   makeScalarWeakBigSetStore,
-  M,
 } = makeFakeCollectionManager();
 
 function makeGenericRemotable(typeName) {

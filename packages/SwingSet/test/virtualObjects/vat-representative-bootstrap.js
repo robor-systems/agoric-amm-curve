@@ -1,9 +1,9 @@
 /* global VatData */
 import { Far } from '@agoric/marshal';
 
-const { makeKind, makeVirtualScalarWeakMap } = VatData;
+const { makeKind, makeScalarWeakBigMapStore } = VatData;
 
-const stuff = makeVirtualScalarWeakMap();
+let stuff;
 
 let initialSelf;
 
@@ -60,6 +60,7 @@ export function buildRootObject(vatPowers) {
 
   return Far('root', {
     bootstrap() {
+      stuff = makeScalarWeakBigMapStore();
       return 'bootstrap done';
     },
     makeThing(name, hold) {
@@ -182,7 +183,7 @@ export function buildRootObject(vatPowers) {
       // mode 11: make thing, store thing as value in weakstore, lookup value and return name of value
       // mode 12: make thing, store initial self as value in weakstore, lookup value and return name of value
       const thing = thingMaker(name);
-      const keyish = harden({ x: mode });
+      const keyish = `key for mode ${mode}`;
       switch (mode) {
         case 11:
           stuff.init(keyish, thing);
@@ -220,7 +221,7 @@ export function buildRootObject(vatPowers) {
         default:
           break;
       }
-      const keyish = harden({ x: mode });
+      const keyish = `key for mode ${mode}`;
       switch (mode) {
         case 13:
         case 15:

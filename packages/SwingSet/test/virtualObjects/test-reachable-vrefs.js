@@ -6,7 +6,7 @@ import { Far, Remotable } from '@agoric/marshal';
 import { makeVatSlot } from '../../src/parseVatSlots.js';
 import { makeFakeVirtualStuff } from '../../tools/fakeVirtualSupport.js';
 
-// empty object, used as makeVirtualScalarWeakMap() key
+// empty object, used as weap map store key
 function makeKeyInstance(_state) {
   return {
     init() {},
@@ -32,9 +32,10 @@ function makeHolderInstance(state) {
 
 test('VOM tracks reachable vrefs', async t => {
   const vomOptions = { cacheSize: 3 };
-  const { vom, vrm } = makeFakeVirtualStuff(vomOptions);
-  const { makeVirtualScalarWeakMap, makeKind } = vom;
-  const weakStore = makeVirtualScalarWeakMap();
+  const { vom, vrm, cm } = makeFakeVirtualStuff(vomOptions);
+  const { makeKind } = vom;
+  const { makeScalarWeakBigMapStore } = cm;
+  const weakStore = makeScalarWeakBigMapStore('test');
   const keyMaker = makeKind(makeKeyInstance);
   const holderMaker = makeKind(makeHolderInstance);
 
@@ -63,26 +64,17 @@ test('VOM tracks reachable vrefs', async t => {
   weakStore.set(key2, obj2);
   t.truthy(vrm.isPresenceReachable(vref2));
 
-  // storing Presences as the value for a non-virtual key just holds on to
-  // the Presence directly, and does not track the vref
-
-  const [vref3, obj3] = makePresence();
-  const key3 = {};
-  weakStore.init(key3, obj3);
-  weakStore.set(key3, obj3);
-  t.falsy(vrm.isPresenceReachable(vref3));
-
   // now check that Presences are tracked when in the state of a virtual
   // object
-  const [vref4, obj4] = makePresence();
-  t.falsy(vrm.isPresenceReachable(vref4));
+  const [vref3, obj3] = makePresence();
+  t.falsy(vrm.isPresenceReachable(vref3));
   // eslint-disable-next-line no-unused-vars
-  const holder4 = holderMaker(obj4);
-  t.truthy(vrm.isPresenceReachable(vref4));
+  const holder3 = holderMaker(obj3);
+  t.truthy(vrm.isPresenceReachable(vref3));
 
-  const [vref5, obj5] = makePresence();
-  const holder5 = holderMaker('not yet');
-  t.falsy(vrm.isPresenceReachable(vref5));
-  holder5.setHeld(obj5);
-  t.truthy(vrm.isPresenceReachable(vref5));
+  const [vref4, obj4] = makePresence();
+  const holder4 = holderMaker('not yet');
+  t.falsy(vrm.isPresenceReachable(vref4));
+  holder4.setHeld(obj4);
+  t.truthy(vrm.isPresenceReachable(vref4));
 });

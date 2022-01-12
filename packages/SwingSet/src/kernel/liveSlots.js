@@ -1077,7 +1077,6 @@ function build(
 
   const vatGlobals = harden({
     VatData: {
-      makeVirtualScalarWeakMap: vom.makeVirtualScalarWeakMap,
       makeKind: vom.makeKind,
       makeDurableKind: vom.makeDurableKind,
       makeScalarBigMapStore: collectionManager.makeScalarBigMapStore,

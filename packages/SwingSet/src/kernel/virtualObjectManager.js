@@ -1,9 +1,8 @@
 // @ts-check
 /* eslint-disable no-use-before-define */
 
-import { assert, details as X, quote as q } from '@agoric/assert';
+import { assert, details as X } from '@agoric/assert';
 import { getInterfaceOf } from '@agoric/marshal';
-import { parseVatSlot } from '../parseVatSlots.js';
 // import { kdebug } from './kdebug.js';
 
 const initializationsInProgress = new WeakSet();
@@ -150,9 +149,6 @@ export function makeCache(size, fetch, store) {
  *    behavior.  The result is a maker function that will produce new
  *    virtualized instances of the defined object type on demand.
  *
- * - `makeVirtualScalarWeakMap` creates an instance of WeakStore that can be keyed by these
- *    virtual objects.
- *
  * - `flushCache` will empty the object manager's cache of in-memory object
  *    instances, writing any changed state to the persistent store.  This
  *    provided for testing; it otherwise has little use.
@@ -163,9 +159,8 @@ export function makeCache(size, fetch, store) {
  *    or is part of the persistent state of another virtual object that is being
  *    swapped in from storage.
  *
- * `makeKind`, `makeDurableKind`, and `makeVirtualScalarWeakMap` are made
- * available to user vat code as globals.  The other two methods are for
- * internal use by liveslots.
+ * `makeKind` and `makeDurableKind` are made available to user vat code in the
+ * `VatData` global.  The other two methods are for internal use by liveslots.
  */
 export function makeVirtualObjectManager(
   syscall,
@@ -204,155 +199,6 @@ export function makeVirtualObjectManager(
    */
   function store(vobjID, rawData) {
     syscall.vatstoreSet(`vom.${vobjID}`, JSON.stringify(rawData));
-  }
-
-  let nextWeakStoreID = 1;
-
-  function virtualWeakMapDeleter(descriptor) {
-    let priorKey = '';
-    while (priorKey !== undefined) {
-      const getAfterResult = syscall.vatstoreGetAfter(
-        priorKey,
-        descriptor.keyPrefix,
-      );
-      if (!getAfterResult) {
-        break;
-      }
-      const [vkey] = getAfterResult;
-      priorKey = vkey;
-      syscall.vatstoreDelete(vkey);
-      const key = vkey.substring(descriptor.keyPrefix.length);
-      vrm.removeRecognizableValue(key, descriptor.entryDeleter);
-    }
-  }
-
-  /**
-   * This is essentially a copy of makeVirtualScalarWeakMap from the @agoric/store package,
-   * modified to key a virtual object representative using its virtual object ID
-   * (rather than its object identity) and stash the corresponding value in
-   * persistent storage.  Note this means that (1) non-virtual objects all
-   * continue to be tracked in an in-memory WeakMap, meaning the keys are held
-   * weakly but table size is bounded by memory capacity, while (2) virtual
-   * objects are not actually held weakly and so will never (at this point) be
-   * garbage collected since there's no way to tell when they keys become
-   * unreferenced.
-   *
-   * This should be considered a placeholder for developmental purposes.  It is
-   * not integrated with the regular @agoric/store package in a general way.
-   *
-   * @template {Record<any, any>} K
-   * @template {any} V
-   *
-   * @param {string} [keyName='key']
-   *
-   * @returns {WeakStore<K, V>}
-   */
-  // XXX this should be deprecated and removed
-  function makeVirtualScalarWeakMap(keyName = 'key') {
-    const backingMap = new WeakMap();
-    const storeID = nextWeakStoreID;
-    nextWeakStoreID += 1;
-
-    function assertKeyDoesNotExist(key) {
-      assert(!backingMap.has(key), X`${q(keyName)} already registered: ${key}`);
-    }
-
-    function assertKeyExists(key) {
-      assert(backingMap.has(key), X`${q(keyName)} not found: ${key}`);
-    }
-
-    function virtualObjectKey(key) {
-      const vobjID = getSlotForVal(key);
-      if (vobjID) {
-        const { type, virtual, allocatedByVat } = parseVatSlot(vobjID);
-        if (type === 'object' && (virtual || !allocatedByVat)) {
-          return `vom.ws${storeID}.${vobjID}`;
-        }
-      }
-      return undefined;
-    }
-
-    function entryDeleter(vobjID) {
-      syscall.vatstoreDelete(`vom.ws${storeID}.${vobjID}`);
-    }
-
-    const result = harden({
-      has(key) {
-        const vkey = virtualObjectKey(key);
-        if (vkey) {
-          return !!syscall.vatstoreGet(vkey);
-        } else {
-          return backingMap.has(key);
-        }
-      },
-      get(key) {
-        const vkey = virtualObjectKey(key);
-        if (vkey) {
-          const rawValue = syscall.vatstoreGet(vkey);
-          assert(rawValue, X`${q(keyName)} not found: ${key}`);
-          return unserialize(JSON.parse(rawValue));
-        } else {
-          assertKeyExists(key);
-          return backingMap.get(key);
-        }
-      },
-      init(key, value) {
-        const vkey = virtualObjectKey(key);
-        if (vkey) {
-          assert(
-            !syscall.vatstoreGet(vkey),
-            X`${q(keyName)} already registered: ${key}`,
-          );
-          vrm.addRecognizableValue(key, entryDeleter);
-          const data = serialize(value);
-          data.slots.map(vrm.addReachableVref);
-          syscall.vatstoreSet(vkey, JSON.stringify(data));
-        } else {
-          assertKeyDoesNotExist(key);
-          backingMap.set(key, value);
-        }
-      },
-      set(key, value) {
-        const vkey = virtualObjectKey(key);
-        if (vkey) {
-          const rawBefore = syscall.vatstoreGet(vkey);
-          assert(rawBefore, X`${q(keyName)} not found: ${key}`);
-          const before = JSON.parse(rawBefore);
-          const after = serialize(harden(value));
-          vrm.updateReferenceCounts(before.slots, after.slots);
-          syscall.vatstoreSet(vkey, JSON.stringify(after));
-        } else {
-          assertKeyExists(key);
-          backingMap.set(key, value);
-        }
-      },
-      delete(key) {
-        const vkey = virtualObjectKey(key);
-        if (vkey) {
-          assert(syscall.vatstoreGet(vkey), X`${q(keyName)} not found: ${key}`);
-          syscall.vatstoreDelete(vkey);
-          vrm.removeRecognizableValue(key, entryDeleter);
-        } else {
-          assertKeyExists(key);
-          backingMap.delete(key);
-        }
-      },
-      addAll: entries => {
-        for (const [key, value] of entries) {
-          if (result.has(key)) {
-            result.set(key, value);
-          } else {
-            result.init(key, value);
-          }
-        }
-      },
-    });
-    vrm.droppedCollectionRegistry.register(result, {
-      collectionDeleter: virtualWeakMapDeleter,
-      keyPrefix: `vom.ws${storeID}.`,
-      entryDeleter,
-    });
-    return result;
   }
 
   /* eslint max-classes-per-file: ["error", 2] */
@@ -744,7 +590,6 @@ export function makeVirtualObjectManager(
   };
 
   return harden({
-    makeVirtualScalarWeakMap,
     makeKind,
     makeDurableKind,
     VirtualObjectAwareWeakMap,

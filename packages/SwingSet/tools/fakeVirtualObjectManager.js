@@ -15,7 +15,6 @@ export function makeFakeVirtualObjectManager(vrm, fakeStuff, options = {}) {
   const { cacheSize = 100 } = options;
 
   const {
-    makeVirtualScalarWeakMap,
     makeKind,
     makeDurableKind,
     VirtualObjectAwareWeakMap,
@@ -34,7 +33,6 @@ export function makeFakeVirtualObjectManager(vrm, fakeStuff, options = {}) {
   );
 
   const normalVOM = {
-    makeVirtualScalarWeakMap,
     makeKind,
     makeDurableKind,
     VirtualObjectAwareWeakMap,

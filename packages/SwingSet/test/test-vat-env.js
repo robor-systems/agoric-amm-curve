@@ -1,3 +1,4 @@
+/* global VatData */
 import { test } from '../tools/prepare-test-env-ava.js';
 
 // eslint-disable-next-line import/order
@@ -18,20 +19,36 @@ function makeThingInstance(_state) {
   };
 }
 
-test('makeKind is in the vat environment', t => {
+test('kind makers are in the vat environment', t => {
   // TODO: configure eslint to know that VatData is a global
   // eslint-disable-next-line no-undef
-  const thingMaker = VatData.makeKind(makeThingInstance);
-  const thing1 = thingMaker('thing-1');
-  t.is(thing1.ping(), 4);
+  const vthingMaker = VatData.makeKind(makeThingInstance);
+  const vthing = vthingMaker('vthing');
+  t.is(vthing.ping(), 4);
+
+  const dthingMaker = VatData.makeDurableKind(makeThingInstance);
+  const dthing = dthingMaker('dthing');
+  t.is(dthing.ping(), 4);
 });
 
-test('makeVirtualScalarWeakMap is in the vat environment', t => {
+test('store makers are in the vat environment', t => {
   // TODO: configure eslint to know that VatData is a global
   // eslint-disable-next-line no-undef
-  const s1 = VatData.makeVirtualScalarWeakMap();
-  const k1 = { role: 'key' };
-  const o1 = { size: 10, color: 'blue' };
-  s1.init(k1, o1);
-  t.is(s1.get(k1), o1);
+  const o = harden({ size: 10, color: 'blue' });
+
+  const m = VatData.makeScalarBigMapStore();
+  m.init('key', o);
+  t.deepEqual(m.get('key'), o);
+
+  const wm = VatData.makeScalarWeakBigMapStore();
+  wm.init('key', o);
+  t.deepEqual(wm.get('key'), o);
+
+  const s = VatData.makeScalarBigSetStore();
+  s.add('key');
+  t.truthy(s.has('key'));
+
+  const ws = VatData.makeScalarWeakBigSetStore();
+  ws.add('key');
+  t.truthy(ws.has('key'));
 });

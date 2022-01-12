@@ -2,7 +2,7 @@
 import { E } from '@agoric/eventual-send';
 import { Far } from '@agoric/marshal';
 
-const { makeKind, makeVirtualScalarWeakMap } = VatData;
+const { makeKind, makeScalarWeakBigMapStore } = VatData;
 
 const p = console.log;
 
@@ -44,17 +44,25 @@ function build(name) {
   const thingMaker = makeKind(makeThingInstance);
   let nextThingNumber = 0;
 
-  const myThings = makeVirtualScalarWeakMap('thing'); // thing -> inquiry count
+  let myThings;
+
+  function ensureCollection() {
+    if (!myThings) {
+      myThings = makeScalarWeakBigMapStore('things');
+    }
+  }
 
   return Far('root', {
     async introduce(other) {
       const otherName = await E(other).getName();
       const thing = thingMaker(`thing-${nextThingNumber}`, other, otherName);
       nextThingNumber += 1;
+      ensureCollection();
       myThings.init(thing, 0);
       return thing;
     },
     doYouHave(thing) {
+      ensureCollection();
       if (myThings.has(thing)) {
         const queryCount = myThings.get(thing) + 1;
         myThings.set(thing, queryCount);

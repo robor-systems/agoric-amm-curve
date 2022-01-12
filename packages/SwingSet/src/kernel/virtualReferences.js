@@ -371,10 +371,9 @@ export function makeVirtualReferenceManager(
    * imported Presences or virtual objects (Remotables do not participate in
    * this as they are not keyed by vref but by the actual Remotable objects
    * themselves). We add to a vref's recognizer set whenever we use a Presence
-   * or virtual object as a key into a makeVirtualScalarWeakMap() instance or an
-   * instance of VirtualObjectAwareWeakMap or VirtualObjectAwareWeakSet.  We
-   * remove it whenever that key (or the whole collection containing it) is
-   * deleted.
+   * or virtual object as a key into a weak store instance or an instance of
+   * VirtualObjectAwareWeakMap or VirtualObjectAwareWeakSet.  We remove it
+   * whenever that key (or the whole collection containing it) is deleted.
    *
    * A recognizer is one of:
    *   Map - the map contained within a VirtualObjectAwareWeakMap to point to its vref-keyed entries.

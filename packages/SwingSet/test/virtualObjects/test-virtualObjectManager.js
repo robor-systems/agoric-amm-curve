@@ -558,9 +558,9 @@ test('demand farhood', t => {
 });
 
 test('weak store operations', t => {
-  const { makeVirtualScalarWeakMap, makeKind } = makeFakeVirtualObjectManager({
-    cacheSize: 3,
-  });
+  const { vom, cm } = makeFakeVirtualStuff({ cacheSize: 3 });
+  const { makeKind } = vom;
+  const { makeScalarWeakBigMapStore } = cm;
 
   const thingMaker = makeKind(makeThingInstance);
   const zotMaker = makeKind(makeZotInstance);
@@ -573,10 +573,10 @@ test('weak store operations', t => {
   const zot3 = zotMaker(3, 'z3');
   const zot4 = zotMaker(4, 'z4');
 
-  const ws1 = makeVirtualScalarWeakMap();
-  const ws2 = makeVirtualScalarWeakMap();
-  const nv1 = {};
-  const nv2 = { a: 47 };
+  const ws1 = makeScalarWeakBigMapStore();
+  const ws2 = makeScalarWeakBigMapStore();
+  const nv1 = 'a';
+  const nv2 = 'b';
   ws1.init(zot1, 'zot #1');
   ws2.init(zot2, 'zot #2');
   ws1.init(zot3, 'zot #3');

@@ -9,14 +9,18 @@ test('harden from SES is in the zoe contract environment', t => {
   t.pass();
 });
 
-test('(mock) makeKind from SwingSet is in the zoe contract environment', t => {
+test('(mock) kind makers from SwingSet are in the zoe contract environment', t => {
   // @ts-ignore testing existence of function only
   VatData.makeKind();
+  VatData.makeDurableKind();
   t.pass();
 });
 
-test('(mock) makeVirtualScalarWeakMap from SwingSet is in the zoe contract environment', t => {
+test('(mock) store makers from SwingSet are in the zoe contract environment', t => {
   // @ts-ignore testing existence of function only
-  VatData.makeVirtualScalarWeakMap();
+  VatData.makeScalarBigMapStore();
+  VatData.makeScalarWeakBigMapStore();
+  VatData.makeScalarBigSetStore();
+  VatData.makeScalarWeakBigSetStore();
   t.pass();
 });

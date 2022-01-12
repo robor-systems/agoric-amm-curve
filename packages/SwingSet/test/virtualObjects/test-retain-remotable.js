@@ -6,9 +6,9 @@ import { Far } from '@agoric/marshal';
 
 import engineGC from '../../src/engine-gc.js';
 import { makeGcAndFinalize } from '../../src/gc-and-finalize.js';
-import { makeFakeVirtualObjectManager } from '../../tools/fakeVirtualSupport.js';
+import { makeFakeVirtualStuff } from '../../tools/fakeVirtualSupport.js';
 
-// empty object, used as makeVirtualScalarWeakMap() key
+// empty object, used as weak map store key
 function makeKeyInstance(_state) {
   return {
     init() {},
@@ -79,9 +79,10 @@ function stashRemotableFour(holderMaker) {
 test('remotables retained by virtualized data', async t => {
   const gcAndFinalize = makeGcAndFinalize(engineGC);
   const vomOptions = { cacheSize: 3, weak: true };
-  const vom = makeFakeVirtualObjectManager(vomOptions);
-  const { makeVirtualScalarWeakMap, makeKind } = vom;
-  const weakStore = makeVirtualScalarWeakMap();
+  const { vom, cm } = makeFakeVirtualStuff(vomOptions);
+  const { makeKind } = vom;
+  const { makeScalarWeakBigMapStore } = cm;
+  const weakStore = makeScalarWeakBigMapStore('ws');
   const keyMaker = makeKind(makeKeyInstance);
   const holderMaker = makeKind(makeHolderInstance);
 

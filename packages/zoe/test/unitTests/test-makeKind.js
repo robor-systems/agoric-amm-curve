@@ -21,6 +21,10 @@ test('makeKind non-swingset', async t => {
   const { zoeService: zoe } = makeZoeKit(fakeVatAdmin);
   const installation = await E(zoe).install(bundle);
   t.notThrows(() => VatData.makeKind());
-  t.notThrows(() => VatData.makeVirtualScalarWeakMap());
+  t.notThrows(() => VatData.makeDurableKind());
+  t.notThrows(() => VatData.makeScalarBigMapStore());
+  t.notThrows(() => VatData.makeScalarWeakBigMapStore());
+  t.notThrows(() => VatData.makeScalarBigSetStore());
+  t.notThrows(() => VatData.makeScalarWeakBigSetStore());
   await t.notThrowsAsync(() => E(zoe).startInstance(installation));
 });

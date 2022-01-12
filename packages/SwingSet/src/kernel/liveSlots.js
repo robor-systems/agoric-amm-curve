@@ -1230,6 +1230,7 @@ function build(
   const unmeteredDispatch = meterControl.unmetered(dispatchToUserspace);
 
   async function bringOutYourDead() {
+    vom.flushCache();
     await gcTools.gcAndFinalize();
     const doMore = await scanForDeadObjects();
     if (doMore) {

@@ -25,6 +25,7 @@ const initializationsInProgress = new WeakSet();
 export function makeCache(size, fetch, store) {
   let lruHead;
   let lruTail;
+  let dirtyCount = 0;
   const liveTable = new Map();
 
   const cache = {
@@ -46,6 +47,7 @@ export function makeCache(size, fetch, store) {
         if (lruTail.dirty) {
           store(lruTail.vobjID, lruTail.rawData);
           lruTail.dirty = false;
+          dirtyCount -= 1;
         }
         lruTail.rawData = null;
         if (lruTail.prev) {
@@ -59,11 +61,24 @@ export function makeCache(size, fetch, store) {
         deadEntry.prev = undefined;
       }
     },
+    markDirty(entry) {
+      if (!entry.dirty) {
+        entry.dirty = true;
+        dirtyCount += 1;
+      }
+    },
     flush() {
-      const saveSize = size;
-      size = 0;
-      cache.makeRoom();
-      size = saveSize;
+      if (dirtyCount > 0) {
+        let entry = lruTail;
+        while (entry) {
+          if (entry.dirty) {
+            store(entry.vobjID, entry.rawData);
+            entry.dirty = false;
+          }
+          entry = entry.prev;
+        }
+        dirtyCount = 0;
+      }
     },
     remember(innerObj) {
       if (liveTable.has(innerObj.vobjID)) {
@@ -471,7 +486,7 @@ export function makeVirtualObjectManager(
               }
               vrm.updateReferenceCounts(before.slots, after.slots);
               innerSelf.rawData[prop] = after;
-              innerSelf.dirty = true;
+              cache.markDirty(innerSelf);
             },
           });
         }
@@ -558,7 +573,7 @@ export function makeVirtualObjectManager(
         propertyNames.add(prop);
       }
       innerSelf.wrapData(initialData);
-      innerSelf.dirty = true;
+      cache.markDirty(innerSelf);
       return initialRepresentative;
     }
 

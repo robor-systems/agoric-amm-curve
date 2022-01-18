@@ -26,8 +26,8 @@ function buildRootObject(vatPowers) {
   const { VatData } = vatPowers;
   const {
     makeScalarBigMapStore,
-    makeScalarWeakBigMapStore,
-    makeScalarWeakBigSetStore,
+    makeScalarBigWeakMapStore,
+    makeScalarBigWeakSetStore,
   } = VatData;
 
   let nextStoreNumber = 1;
@@ -44,7 +44,7 @@ function buildRootObject(vatPowers) {
   }
 
   function makeWeakMapStore() {
-    const result = makeScalarWeakBigMapStore(`store #${nextStoreNumber}`, {
+    const result = makeScalarBigWeakMapStore(`store #${nextStoreNumber}`, {
       keySchema: M.any(),
     });
     nextStoreNumber += 1;
@@ -52,7 +52,7 @@ function buildRootObject(vatPowers) {
   }
 
   function makeWeakSetStore() {
-    const result = makeScalarWeakBigSetStore(`store #${nextStoreNumber}`, {
+    const result = makeScalarBigWeakSetStore(`store #${nextStoreNumber}`, {
       keySchema: M.any(),
     });
     nextStoreNumber += 1;

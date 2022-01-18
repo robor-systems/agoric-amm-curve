@@ -7,9 +7,9 @@ import { makeFakeCollectionManager } from '../../tools/fakeVirtualSupport.js';
 
 const {
   makeScalarBigMapStore,
-  makeScalarWeakBigMapStore,
+  makeScalarBigWeakMapStore,
   makeScalarBigSetStore,
-  makeScalarWeakBigSetStore,
+  makeScalarBigWeakSetStore,
 } = makeFakeCollectionManager();
 
 function makeGenericRemotable(typeName) {
@@ -145,7 +145,7 @@ test('basic weak map operations', t => {
   exerciseMapOperations(
     t,
     'weak map',
-    makeScalarWeakBigMapStore('weak map', { keySchema: M.any() }),
+    makeScalarBigWeakMapStore('weak map', { keySchema: M.any() }),
   );
 });
 
@@ -161,7 +161,7 @@ test('basic weak set operations', t => {
   exerciseSetOperations(
     t,
     'weak set',
-    makeScalarWeakBigSetStore('weak set', { keySchema: M.any() }),
+    makeScalarBigWeakSetStore('weak set', { keySchema: M.any() }),
   );
 });
 

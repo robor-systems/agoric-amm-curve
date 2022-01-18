@@ -4,9 +4,9 @@ export function makeFakeCollectionManager(vrm, fakeStuff, _options = {}) {
   const {
     makeCollection,
     makeScalarBigMapStore,
-    makeScalarWeakBigMapStore,
+    makeScalarBigWeakMapStore,
     makeScalarBigSetStore,
-    makeScalarWeakBigSetStore,
+    makeScalarBigWeakSetStore,
   } = makeCollectionManager(
     fakeStuff.syscall,
     vrm,
@@ -21,9 +21,9 @@ export function makeFakeCollectionManager(vrm, fakeStuff, _options = {}) {
   const normalCM = {
     makeCollection,
     makeScalarBigMapStore,
-    makeScalarWeakBigMapStore,
+    makeScalarBigWeakMapStore,
     makeScalarBigSetStore,
-    makeScalarWeakBigSetStore,
+    makeScalarBigWeakSetStore,
   };
 
   const debugTools = {

@@ -19,8 +19,8 @@ test('(mock) kind makers from SwingSet are in the zoe contract environment', t =
 test('(mock) store makers from SwingSet are in the zoe contract environment', t => {
   // @ts-ignore testing existence of function only
   VatData.makeScalarBigMapStore();
-  VatData.makeScalarWeakBigMapStore();
+  VatData.makeScalarBigWeakMapStore();
   VatData.makeScalarBigSetStore();
-  VatData.makeScalarWeakBigSetStore();
+  VatData.makeScalarBigWeakSetStore();
   t.pass();
 });

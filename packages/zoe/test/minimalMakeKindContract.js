@@ -4,9 +4,9 @@ const start = _zcf => {
   VatData.makeKind();
   VatData.makeDurableKind();
   VatData.makeScalarBigMapStore();
-  VatData.makeScalarWeakBigMapStore();
+  VatData.makeScalarBigWeakMapStore();
   VatData.makeScalarBigSetStore();
-  VatData.makeScalarWeakBigSetStore();
+  VatData.makeScalarBigWeakSetStore();
 
   return harden({});
 };

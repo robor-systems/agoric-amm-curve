@@ -81,8 +81,8 @@ test('remotables retained by virtualized data', async t => {
   const vomOptions = { cacheSize: 3, weak: true };
   const { vom, cm } = makeFakeVirtualStuff(vomOptions);
   const { makeKind } = vom;
-  const { makeScalarWeakBigMapStore } = cm;
-  const weakStore = makeScalarWeakBigMapStore('ws');
+  const { makeScalarBigWeakMapStore } = cm;
+  const weakStore = makeScalarBigWeakMapStore('ws');
   const keyMaker = makeKind(makeKeyInstance);
   const holderMaker = makeKind(makeHolderInstance);
 

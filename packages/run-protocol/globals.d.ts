@@ -2,9 +2,9 @@ interface VatData {
   makeKind: function;
   makeDurableKind: function;
   makeScalarBigMapStore: function;
-  makeScalarWeakBigMapStore: function;
+  makeScalarBigWeakMapStore: function;
   makeScalarBigSetStore: function;
-  makeScalarWeakBigSetStore: function;
+  makeScalarBigWeakSetStore: function;
 }
 
 declare let VatData: VatData;

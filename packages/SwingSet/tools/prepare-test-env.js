@@ -17,18 +17,18 @@ const { makeKind, makeDurableKind } = vom;
 
 const {
   makeScalarBigMapStore,
-  makeScalarWeakBigMapStore,
+  makeScalarBigWeakMapStore,
   makeScalarBigSetStore,
-  makeScalarWeakBigSetStore,
+  makeScalarBigWeakSetStore,
 } = cm;
 
 const VatData = harden({
   makeKind,
   makeDurableKind,
   makeScalarBigMapStore,
-  makeScalarWeakBigMapStore,
+  makeScalarBigWeakMapStore,
   makeScalarBigSetStore,
-  makeScalarWeakBigSetStore,
+  makeScalarBigWeakSetStore,
 });
 
 globalThis.VatData = VatData;

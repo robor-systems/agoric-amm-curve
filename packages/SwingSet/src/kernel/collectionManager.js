@@ -770,7 +770,7 @@ export function makeCollectionManager(
    * @param {Partial<StoreOptions>=} options
    * @returns {WeakMapStore<K,V>}
    */
-  function makeScalarWeakBigMapStore(
+  function makeScalarBigWeakMapStore(
     label = 'weakMap',
     { keySchema = M.scalar(), valueSchema = undefined, durable = false } = {},
   ) {
@@ -822,7 +822,7 @@ export function makeCollectionManager(
    * @param {Partial<StoreOptions>=} options
    * @returns {WeakSetStore<K>}
    */
-  function makeScalarWeakBigSetStore(
+  function makeScalarBigWeakSetStore(
     label = 'weakSet',
     { keySchema = M.scalar(), valueSchema = undefined, durable = false } = {},
   ) {
@@ -883,9 +883,9 @@ export function makeCollectionManager(
   return harden({
     makeCollection,
     makeScalarBigMapStore,
-    makeScalarWeakBigMapStore,
+    makeScalarBigWeakMapStore,
     makeScalarBigSetStore,
-    makeScalarWeakBigSetStore,
+    makeScalarBigWeakSetStore,
     testHooks,
   });
 }

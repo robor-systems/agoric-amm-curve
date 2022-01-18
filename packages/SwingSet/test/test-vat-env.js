@@ -40,7 +40,7 @@ test('store makers are in the vat environment', t => {
   m.init('key', o);
   t.deepEqual(m.get('key'), o);
 
-  const wm = VatData.makeScalarWeakBigMapStore();
+  const wm = VatData.makeScalarBigWeakMapStore();
   wm.init('key', o);
   t.deepEqual(wm.get('key'), o);
 
@@ -48,7 +48,7 @@ test('store makers are in the vat environment', t => {
   s.add('key');
   t.truthy(s.has('key'));
 
-  const ws = VatData.makeScalarWeakBigSetStore();
+  const ws = VatData.makeScalarBigWeakSetStore();
   ws.add('key');
   t.truthy(ws.has('key'));
 });

@@ -23,8 +23,8 @@ test('makeKind non-swingset', async t => {
   t.notThrows(() => VatData.makeKind());
   t.notThrows(() => VatData.makeDurableKind());
   t.notThrows(() => VatData.makeScalarBigMapStore());
-  t.notThrows(() => VatData.makeScalarWeakBigMapStore());
+  t.notThrows(() => VatData.makeScalarBigWeakMapStore());
   t.notThrows(() => VatData.makeScalarBigSetStore());
-  t.notThrows(() => VatData.makeScalarWeakBigSetStore());
+  t.notThrows(() => VatData.makeScalarBigWeakSetStore());
   await t.notThrowsAsync(() => E(zoe).startInstance(installation));
 });

@@ -1080,9 +1080,9 @@ function build(
       makeKind: vom.makeKind,
       makeDurableKind: vom.makeDurableKind,
       makeScalarBigMapStore: collectionManager.makeScalarBigMapStore,
-      makeScalarWeakBigMapStore: collectionManager.makeScalarWeakBigMapStore,
+      makeScalarBigWeakMapStore: collectionManager.makeScalarBigWeakMapStore,
       makeScalarBigSetStore: collectionManager.makeScalarBigSetStore,
-      makeScalarWeakBigSetStore: collectionManager.makeScalarWeakBigSetStore,
+      makeScalarBigWeakSetStore: collectionManager.makeScalarBigWeakSetStore,
     },
   });
 

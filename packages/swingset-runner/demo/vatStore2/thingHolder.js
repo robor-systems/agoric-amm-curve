@@ -2,7 +2,7 @@
 import { E } from '@agoric/eventual-send';
 import { Far } from '@agoric/marshal';
 
-const { makeKind, makeScalarWeakBigMapStore } = VatData;
+const { makeKind, makeScalarBigWeakMapStore } = VatData;
 
 const p = console.log;
 
@@ -48,7 +48,7 @@ function build(name) {
 
   function ensureCollection() {
     if (!myThings) {
-      myThings = makeScalarWeakBigMapStore('things');
+      myThings = makeScalarBigWeakMapStore('things');
     }
   }
 

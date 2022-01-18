@@ -1,7 +1,7 @@
 /* global VatData */
 import { Far } from '@agoric/marshal';
 
-const { makeKind, makeScalarWeakBigMapStore } = VatData;
+const { makeKind, makeScalarBigWeakMapStore } = VatData;
 
 let stuff;
 
@@ -60,7 +60,7 @@ export function buildRootObject(vatPowers) {
 
   return Far('root', {
     bootstrap() {
-      stuff = makeScalarWeakBigMapStore();
+      stuff = makeScalarBigWeakMapStore();
       return 'bootstrap done';
     },
     makeThing(name, hold) {

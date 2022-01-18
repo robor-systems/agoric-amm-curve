@@ -34,8 +34,8 @@ test('VOM tracks reachable vrefs', async t => {
   const vomOptions = { cacheSize: 3 };
   const { vom, vrm, cm } = makeFakeVirtualStuff(vomOptions);
   const { makeKind } = vom;
-  const { makeScalarWeakBigMapStore } = cm;
-  const weakStore = makeScalarWeakBigMapStore('test');
+  const { makeScalarBigWeakMapStore } = cm;
+  const weakStore = makeScalarBigWeakMapStore('test');
   const keyMaker = makeKind(makeKeyInstance);
   const holderMaker = makeKind(makeHolderInstance);
 

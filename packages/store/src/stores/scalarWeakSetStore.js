@@ -1,6 +1,7 @@
 // @ts-check
 
 import { Far, passStyleOf } from '@agoric/marshal';
+import { getCopySetKeys, isCopySet } from '../keys/copySet.js';
 import { fit, assertPattern } from '../patterns/patternMatchers.js';
 
 const { details: X, quote: q } = assert;
@@ -43,6 +44,9 @@ export const makeWeakSetStoreMethods = (
     },
 
     addAll: keys => {
+      if (isCopySet(keys)) {
+        keys = getCopySetKeys(keys);
+      }
       for (const key of keys) {
         assertKeyOkToAdd(key);
         jsset.add(key);

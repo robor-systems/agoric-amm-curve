@@ -159,7 +159,7 @@ test('XS + SES snapshots are long-term deterministic', async t => {
   let expectedHashes = JSON.parse(hashesText);
 
   const h1 = await store.save(vat.snapshot);
-  t.is(h1, expectedHashes[0], 'initial snapshot');
+  t.is(h1, expectedHashes.initial, 'initial snapshot');
 
   const bootScript = await ld.asset(
     '@agoric/xsnap/dist/bundle-ses-boot.umd.js',
@@ -169,7 +169,7 @@ test('XS + SES snapshots are long-term deterministic', async t => {
   const h2 = await store.save(vat.snapshot);
   t.is(
     h2,
-    expectedHashes[1],
+    expectedHashes.bootstrap,
     'after SES boot - sensitive to SES-shim, XS, and supervisor',
   );
 
@@ -177,7 +177,7 @@ test('XS + SES snapshots are long-term deterministic', async t => {
   const h3 = await store.save(vat.snapshot);
   t.is(
     h3,
-    expectedHashes[2],
+    expectedHashes.sanity,
     'after use of harden() - sensitive to SES-shim, XS, and supervisor',
   );
 
@@ -189,7 +189,7 @@ Which will fail, but update the hashes.
 Then commit ${hashesPath}.
 `);
   if (process.env.CAPTURE_XSNAP_HASHES) {
-    expectedHashes = [h1, h2, h3];
+    expectedHashes = { initial: h1, bootstrap: h2, sanity: h3 };
     hashesText = JSON.stringify(expectedHashes, null, 2);
     hashesBytes = new TextEncoder().encode(hashesText);
     await fs.promises.writeFile(hashesPath, hashesBytes);

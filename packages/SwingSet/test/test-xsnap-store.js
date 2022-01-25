@@ -190,7 +190,7 @@ Then commit ${hashesPath}.
 `);
   if (process.env.CAPTURE_XSNAP_HASHES) {
     expectedHashes = { initial: h1, bootstrap: h2, sanity: h3 };
-    hashesText = JSON.stringify(expectedHashes, null, 2);
+    hashesText = `${JSON.stringify(expectedHashes, null, 2)}\n`;
     hashesBytes = new TextEncoder().encode(hashesText);
     await fs.promises.writeFile(hashesPath, hashesBytes);
   }

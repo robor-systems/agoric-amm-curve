@@ -2,7 +2,6 @@ import { makeCollectionManager } from '../src/kernel/collectionManager.js';
 
 export function makeFakeCollectionManager(vrm, fakeStuff, _options = {}) {
   const {
-    makeCollection,
     makeScalarBigMapStore,
     makeScalarBigWeakMapStore,
     makeScalarBigSetStore,
@@ -19,7 +18,6 @@ export function makeFakeCollectionManager(vrm, fakeStuff, _options = {}) {
   );
 
   const normalCM = {
-    makeCollection,
     makeScalarBigMapStore,
     makeScalarBigWeakMapStore,
     makeScalarBigSetStore,

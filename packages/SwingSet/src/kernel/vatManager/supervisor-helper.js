@@ -127,7 +127,7 @@ function makeSupervisorSyscall(syscallToManager, workerCanBlock) {
         lowerBound,
         upperBound,
       ]);
-      return result === null ? undefined : result;
+      return result === null ? [undefined, undefined] : result;
     },
     vatstoreDelete: key => doSyscall(['vatstoreDelete', key]),
   };

@@ -86,7 +86,7 @@
  * Defaults to true, so please mark short lived stores explicitly.
  * @property {boolean=} durable  The contents of this store survive termination
  *   of its containing process, allowing for restart or upgrade but at the cost
- *   of forbidding storage of references to ephemeral data.
+ *   of forbidding storage of references to ephemeral data.  Defaults to false.
  * @property {Pattern=} keySchema
  * @property {Pattern=} valueSchema
  */

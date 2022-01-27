@@ -88,14 +88,14 @@ export const makeWeakMapStoreMethods = (
  */
 export const makeScalarWeakMapStore = (
   keyName = 'key',
-  { longLived = true, keyPattern = undefined, valuePattern = undefined } = {},
+  { longLived = true, keySchema = undefined, valueSchema = undefined } = {},
 ) => {
   const jsmap = new (longLived ? WeakMap : Map)();
-  if (keyPattern !== undefined) {
-    assertPattern(keyPattern);
+  if (keySchema !== undefined) {
+    assertPattern(keySchema);
   }
-  if (valuePattern !== undefined) {
-    assertPattern(valuePattern);
+  if (valueSchema !== undefined) {
+    assertPattern(valueSchema);
   }
 
   const assertKVOkToSet = (_key, value) => {
@@ -104,8 +104,8 @@ export const makeScalarWeakMapStore = (
     harden(value);
 
     assertPassable(value);
-    if (valuePattern !== undefined) {
-      fit(value, valuePattern);
+    if (valueSchema !== undefined) {
+      fit(value, valueSchema);
     }
   };
 
@@ -118,8 +118,8 @@ export const makeScalarWeakMapStore = (
       passStyleOf(key) === 'remotable',
       X`Only remotables can be keys of scalar WeakMapStores: ${key}`,
     );
-    if (keyPattern !== undefined) {
-      fit(key, keyPattern);
+    if (keySchema !== undefined) {
+      fit(key, keySchema);
     }
     assertKVOkToSet(key, value);
   };

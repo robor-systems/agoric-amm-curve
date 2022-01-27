@@ -447,7 +447,7 @@ function makeTranslateKernelSyscallResultToVatSyscallResult(
           assert(Array.isArray(resultData));
           return harden(['ok', resultData]);
         } else {
-          return harden(['ok', undefined]);
+          return harden(['ok', [undefined, undefined]]);
         }
       default:
         assert(resultData === null);

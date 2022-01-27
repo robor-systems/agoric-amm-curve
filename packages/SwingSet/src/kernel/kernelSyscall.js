@@ -195,7 +195,7 @@ export function makeKernelSyscallHandler(tools) {
     }
     if (nextIter.done) {
       clearVatStoreIteration();
-      return harden(['ok', undefined]);
+      return harden(['ok', [undefined, undefined]]);
     } else {
       const nextKey = nextIter.value;
       const resultValue = kvStore.get(nextKey);

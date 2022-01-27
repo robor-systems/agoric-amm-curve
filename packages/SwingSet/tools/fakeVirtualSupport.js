@@ -111,7 +111,7 @@ export function makeFakeLiveSlotsStuff(options = {}) {
       if (priorKeyReturned === priorKey) {
         from = priorKeyIndex;
       }
-      let result;
+      let result = [undefined, undefined];
       for (let i = from; i < sortedKeys.length; i += 1) {
         const key = sortedKeys[i];
         if (key >= actualEnd) {

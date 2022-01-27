@@ -133,14 +133,14 @@ export const makeMapStoreMethods = (
  */
 export const makeScalarMapStore = (
   keyName = 'key',
-  { keyPattern = undefined, valuePattern = undefined } = {},
+  { keySchema = undefined, valueSchema = undefined } = {},
 ) => {
   const jsmap = new Map();
-  if (keyPattern !== undefined) {
-    assertPattern(keyPattern);
+  if (keySchema !== undefined) {
+    assertPattern(keySchema);
   }
-  if (valuePattern !== undefined) {
-    assertPattern(valuePattern);
+  if (valueSchema !== undefined) {
+    assertPattern(valueSchema);
   }
 
   const assertKVOkToSet = (_key, value) => {
@@ -149,8 +149,8 @@ export const makeScalarMapStore = (
     harden(value);
 
     assertPassable(value);
-    if (valuePattern !== undefined) {
-      fit(value, valuePattern);
+    if (valueSchema !== undefined) {
+      fit(value, valueSchema);
     }
   };
 
@@ -160,8 +160,8 @@ export const makeScalarMapStore = (
     harden(key);
 
     assertScalarKey(key);
-    if (keyPattern !== undefined) {
-      fit(key, keyPattern);
+    if (keySchema !== undefined) {
+      fit(key, keySchema);
     }
     assertKVOkToSet(key, value);
   };

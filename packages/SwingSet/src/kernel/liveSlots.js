@@ -1148,17 +1148,16 @@ function build(
             assert(upperBound > lowerBound, 'upperBound must be > lowerBound');
             scopedUpperBound = `vvs.${upperBound}`;
           }
-          const fetched = syscall.vatstoreGetAfter(
+          const [key, value] = syscall.vatstoreGetAfter(
             scopedPriorKey,
             scopedLowerBound,
             scopedUpperBound,
           );
-          if (fetched) {
-            const [key, value] = fetched;
+          if (key) {
             assert(key.startsWith('vvs.'));
             return [key.slice(4), value];
           } else {
-            return undefined;
+            return [undefined, undefined];
           }
         },
         delete: key => {

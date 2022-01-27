@@ -37,6 +37,7 @@ const primes = [
 
 const stuff = [
   [47, 'number 47'],
+  [-29, 'number -29'],
   [3, 'number 3'],
   [1000n, 'bigint 1000'],
   [-77n, 'bigint -77'],
@@ -370,11 +371,69 @@ test('set clear', t => {
   t.is(testStore.size(), 0);
 });
 
+test('map fail on concurrent modification', t => {
+  const primeMap = makeScalarBigMapStore('fmap', {
+    keySchema: M.number(),
+  });
+  primes.forEach((v, i) => primeMap.init(v, `${v} is prime #${i + 1}`));
+
+  let pos = 0;
+  t.throws(() => {
+    // eslint-disable-next-line no-unused-vars
+    for (const k of primeMap.keys()) {
+      pos += 1;
+      if (pos === 5) {
+        primeMap.delete(43);
+      }
+    }
+  }, m(`keys in store cannot be changed during iteration`));
+
+  pos = 0;
+  t.throws(() => {
+    // eslint-disable-next-line no-unused-vars
+    for (const k of primeMap.keys()) {
+      pos += 1;
+      if (pos === 5) {
+        primeMap.init(8, 'nonsense');
+      }
+    }
+  }, m(`keys in store cannot be changed during iteration`));
+});
+
+test('set fail on concurrent modification', t => {
+  const primeSet = makeScalarBigSetStore('fset', {
+    keySchema: M.number(),
+  });
+  primes.forEach(v => primeSet.add(v));
+
+  let pos = 0;
+  t.throws(() => {
+    // eslint-disable-next-line no-unused-vars
+    for (const k of primeSet.keys()) {
+      pos += 1;
+      if (pos === 5) {
+        primeSet.delete(43);
+      }
+    }
+  }, m(`keys in store cannot be changed during iteration`));
+
+  pos = 0;
+  t.throws(() => {
+    // eslint-disable-next-line no-unused-vars
+    for (const k of primeSet.keys()) {
+      pos += 1;
+      if (pos === 5) {
+        primeSet.add(8);
+      }
+    }
+  }, m(`keys in store cannot be changed during iteration`));
+});
+
 test('map queries', t => {
   const testStore = makeScalarBigMapStore('qmap', { keySchema: M.any() });
   fillBasicMapStore(testStore);
 
-  t.deepEqual(Array.from(testStore.keys(M.number())), [3, 47]);
+  t.deepEqual(Array.from(testStore.keys(M.number())), [-29, 3, 47]);
   t.deepEqual(Array.from(testStore.keys(47)), [47]);
   t.deepEqual(Array.from(testStore.keys(M.bigint())), [-77n, 1000n]);
   t.deepEqual(Array.from(testStore.keys(M.string())), ['@#$@#$@#$@', 'hello']);
@@ -392,6 +451,7 @@ test('map queries', t => {
   t.deepEqual(Array.from(testStore.keys(M.any())), [
     false,
     true,
+    -29,
     3,
     47,
     -77n,
@@ -408,6 +468,7 @@ test('map queries', t => {
   t.deepEqual(Array.from(testStore.keys(M.scalar())), [
     false,
     true,
+    -29,
     3,
     47,
     -77n,
@@ -423,6 +484,7 @@ test('map queries', t => {
   ]);
 
   t.deepEqual(Array.from(testStore.values(M.number())), [
+    'number -29',
     'number 3',
     'number 47',
   ]);
@@ -454,6 +516,7 @@ test('map queries', t => {
   t.deepEqual(Array.from(testStore.values(M.any())), [
     'boolean false',
     'boolean true',
+    'number -29',
     'number 3',
     'number 47',
     'bigint -77',
@@ -470,6 +533,7 @@ test('map queries', t => {
   t.deepEqual(Array.from(testStore.values(M.scalar())), [
     'boolean false',
     'boolean true',
+    'number -29',
     'number 3',
     'number 47',
     'bigint -77',
@@ -485,6 +549,7 @@ test('map queries', t => {
   ]);
 
   t.deepEqual(Array.from(testStore.entries(M.number())), [
+    [-29, 'number -29'],
     [3, 'number 3'],
     [47, 'number 47'],
   ]);
@@ -518,6 +583,7 @@ test('map queries', t => {
   t.deepEqual(Array.from(testStore.entries(M.any())), [
     [false, 'boolean false'],
     [true, 'boolean true'],
+    [-29, 'number -29'],
     [3, 'number 3'],
     [47, 'number 47'],
     [-77n, 'bigint -77'],
@@ -534,6 +600,7 @@ test('map queries', t => {
   t.deepEqual(Array.from(testStore.entries(M.scalar())), [
     [false, 'boolean false'],
     [true, 'boolean true'],
+    [-29, 'number -29'],
     [3, 'number 3'],
     [47, 'number 47'],
     [-77n, 'bigint -77'],
@@ -553,7 +620,7 @@ test('set queries', t => {
   const testStore = makeScalarBigSetStore('qset', { keySchema: M.any() });
   fillBasicSetStore(testStore);
 
-  t.deepEqual(Array.from(testStore.values(M.number())), [3, 47]);
+  t.deepEqual(Array.from(testStore.values(M.number())), [-29, 3, 47]);
   t.deepEqual(Array.from(testStore.values(47)), [47]);
   t.deepEqual(Array.from(testStore.values(M.bigint())), [-77n, 1000n]);
   t.deepEqual(Array.from(testStore.values(M.string())), [
@@ -574,6 +641,7 @@ test('set queries', t => {
   t.deepEqual(Array.from(testStore.values(M.any())), [
     false,
     true,
+    -29,
     3,
     47,
     -77n,
@@ -590,6 +658,7 @@ test('set queries', t => {
   t.deepEqual(Array.from(testStore.values(M.scalar())), [
     false,
     true,
+    -29,
     3,
     47,
     -77n,
@@ -605,6 +674,7 @@ test('set queries', t => {
   ]);
 
   t.deepEqual(Array.from(testStore.entries(M.number())), [
+    [-29, -29],
     [3, 3],
     [47, 47],
   ]);

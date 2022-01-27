@@ -146,6 +146,7 @@ function makeRPMaker() {
 
 const qcUndefined = { '@qclass': 'undefined' };
 const NONE = undefined;
+const DONE = [undefined, undefined];
 const undefinedVal = capargs(qcUndefined);
 const anySchema = JSON.stringify(
   capargs([{ '@qclass': 'tagged', tag: 'match:any', payload: qcUndefined }]),
@@ -388,18 +389,18 @@ function validateDeleteMetadataOnly(
       validate(v, matchVatstoreDelete(`vom.rc.${contentRef}`));
     }
     validate(v, matchVatstoreDelete(`vc.${idx}.sfoo`));
-    validate(v, matchVatstoreGetAfter('', `vc.${idx}.`, `vc.${idx}.{`, NONE));
+    validate(v, matchVatstoreGetAfter('', `vc.${idx}.`, `vc.${idx}.{`, DONE));
     validate(
       v,
       matchVatstoreGetAfter(
         `vc.${idx}.sfoo`,
         `vc.${idx}.`,
         `vc.${idx}.{`,
-        NONE,
+        DONE,
       ),
     );
   } else {
-    validate(v, matchVatstoreGetAfter('', `vc.${idx}.`, `vc.${idx}.{`, NONE));
+    validate(v, matchVatstoreGetAfter('', `vc.${idx}.`, `vc.${idx}.{`, DONE));
   }
   validate(
     v,
@@ -427,7 +428,7 @@ function validateDeleteMetadataOnly(
   validate(v, matchVatstoreDelete(`vc.${idx}.|schemata`));
   validate(
     v,
-    matchVatstoreGetAfter(`vc.${idx}.|schemata`, `vc.${idx}.|`, NONE, NONE),
+    matchVatstoreGetAfter(`vc.${idx}.|schemata`, `vc.${idx}.|`, NONE, DONE),
   );
   validate(v, matchVatstoreDelete(`vom.rc.${mapRef(idx)}`));
   validate(v, matchVatstoreDelete(`vom.es.${mapRef(idx)}`));
@@ -1134,7 +1135,7 @@ test.serial('verify store weak key GC', async t => {
   );
   validate(
     v,
-    matchVatstoreGetAfter(`vc.2.${ordinalKey}`, `vc.2.`, `vc.2.{`, NONE),
+    matchVatstoreGetAfter(`vc.2.${ordinalKey}`, `vc.2.`, `vc.2.{`, DONE),
   );
   t.is(testHooks.storeSizeInternal(mapRef(3)), 1);
   validate(
@@ -1146,7 +1147,7 @@ test.serial('verify store weak key GC', async t => {
   );
   validate(
     v,
-    matchVatstoreGetAfter(`vc.3.${ordinalKey}`, `vc.3.`, `vc.3.{`, NONE),
+    matchVatstoreGetAfter(`vc.3.${ordinalKey}`, `vc.3.`, `vc.3.{`, DONE),
   );
   validateDone(v);
 
@@ -1164,9 +1165,9 @@ test.serial('verify store weak key GC', async t => {
 
   t.is(testHooks.countCollectionsForWeakKey(mapRef(4)), 0);
   t.is(testHooks.storeSizeInternal(mapRef(2)), 0);
-  validate(v, matchVatstoreGetAfter('', `vc.2.`, `vc.2.{`, NONE));
+  validate(v, matchVatstoreGetAfter('', `vc.2.`, `vc.2.{`, DONE));
   t.is(testHooks.storeSizeInternal(mapRef(3)), 0);
-  validate(v, matchVatstoreGetAfter('', `vc.3.`, `vc.3.{`, NONE));
+  validate(v, matchVatstoreGetAfter('', `vc.3.`, `vc.3.{`, DONE));
   validateDone(v);
 });
 
@@ -1215,7 +1216,7 @@ test.serial('verify presence weak key GC', async t => {
   );
   validate(
     v,
-    matchVatstoreGetAfter(`vc.2.${ordinalKey}`, `vc.2.`, `vc.2.{`, NONE),
+    matchVatstoreGetAfter(`vc.2.${ordinalKey}`, `vc.2.`, `vc.2.{`, DONE),
   );
   t.is(testHooks.storeSizeInternal(mapRef(3)), 1);
   validate(
@@ -1227,7 +1228,7 @@ test.serial('verify presence weak key GC', async t => {
   );
   validate(
     v,
-    matchVatstoreGetAfter(`vc.3.${ordinalKey}`, `vc.3.`, `vc.3.{`, NONE),
+    matchVatstoreGetAfter(`vc.3.${ordinalKey}`, `vc.3.`, `vc.3.{`, DONE),
   );
   validateDone(v);
 
@@ -1246,7 +1247,7 @@ test.serial('verify presence weak key GC', async t => {
   );
   validate(
     v,
-    matchVatstoreGetAfter(`vc.2.${ordinalKey}`, `vc.2.`, `vc.2.{`, NONE),
+    matchVatstoreGetAfter(`vc.2.${ordinalKey}`, `vc.2.`, `vc.2.{`, DONE),
   );
   t.is(testHooks.storeSizeInternal(mapRef(3)), 1);
   validate(
@@ -1258,7 +1259,7 @@ test.serial('verify presence weak key GC', async t => {
   );
   validate(
     v,
-    matchVatstoreGetAfter(`vc.3.${ordinalKey}`, `vc.3.`, `vc.3.{`, NONE),
+    matchVatstoreGetAfter(`vc.3.${ordinalKey}`, `vc.3.`, `vc.3.{`, DONE),
   );
   validateDone(v);
 
@@ -1276,8 +1277,8 @@ test.serial('verify presence weak key GC', async t => {
 
   t.is(testHooks.countCollectionsForWeakKey('o-5'), 0);
   t.is(testHooks.storeSizeInternal(mapRef(2)), 0);
-  validate(v, matchVatstoreGetAfter('', `vc.2.`, `vc.2.{`, NONE));
+  validate(v, matchVatstoreGetAfter('', `vc.2.`, `vc.2.{`, DONE));
   t.is(testHooks.storeSizeInternal(mapRef(3)), 0);
-  validate(v, matchVatstoreGetAfter('', `vc.3.`, `vc.3.{`, NONE));
+  validate(v, matchVatstoreGetAfter('', `vc.3.`, `vc.3.{`, DONE));
   validateDone(v);
 });

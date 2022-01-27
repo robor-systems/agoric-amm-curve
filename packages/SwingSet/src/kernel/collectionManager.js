@@ -18,8 +18,12 @@ import {
 import { parseVatSlot } from '../parseVatSlots.js';
 
 function zeroPad(n, size) {
-  const str = `000000000000000000${n}`;
-  return str.substring(str.length - size);
+  const nStr = `${n}`;
+  assert(nStr.length <= size);
+  const str = `00000000000000000000${nStr}`;
+  const result = str.substring(str.length - size);
+  assert(result.length === size);
+  return result;
 }
 
 // This is the JavaScript analog to a C union: a way to map between a float as a
@@ -32,6 +36,16 @@ function zeroPad(n, size) {
 // re-entrancy issue.
 const asNumber = new Float64Array(1);
 const asBits = new BigUint64Array(asNumber.buffer);
+
+// JavaScript numbers are encode as keys by outputting the base-16
+// representation of the binary value of the underlying IEEE floating point
+// representation.  For negative values, all bits of this representation are
+// complemented prior to the base-16 conversion, while for positive values, the
+// sign bit is complemented.  This ensures both that negative values sort before
+// positive values and that negative values sort according to their negative
+// magnitude rather than their positive magnitude.  This results in an ASCII
+// encoding whose lexicographic sort order is the same as the numeric sort order
+// of the corresponding numbers.
 
 function numberToDBEntryKey(n) {
   asNumber[0] = n;
@@ -49,7 +63,7 @@ function numberToDBEntryKey(n) {
 
 function dbEntryKeyToNumber(k) {
   let bits = BigInt(`0x${k.substring(1)}`);
-  if (k[0] < '8') {
+  if (k[1] < '8') {
     // eslint-disable-next-line no-bitwise
     bits ^= 0xffffffffffffffffn;
   } else {
@@ -59,6 +73,38 @@ function dbEntryKeyToNumber(k) {
   asBits[0] = bits;
   return asNumber[0];
 }
+
+// BigInts are encoded as keys as follows:
+//   `${prefix}${length}:${encodedNumber}`
+// Where:
+//
+//   ${prefix} is either 'n' or 'p' according to whether the BigInt is negative
+//      or positive ('n' is less than 'p', so negative BigInts will sort below
+//      positive ones)
+//
+//   ${encodedNumber} is the value of the BigInt itself, encoded as a decimal
+//      number.  Positive BigInts use their normal decimal representation (i.e.,
+//      what is returned when you call `toString()` on a BigInt).  Negative
+//      BigInts are encoded as the unpadded 10s complement of their value; in
+//      this encoding, all negative values that have same number of digits will
+//      sort lexically in the inverse order of their numeric value (which is to
+//      say, most negative to least negative).
+//
+//   ${length} is the decimal representation of the width (i.e., the count of
+//      digits) of the BigInt.  This length value is then zero padded to a fixed
+//      number (currently 10) of digits.  Note that the fixed width length field
+//      means that we cannot encode BigInts whose values have more than 10**10
+//      digits, but we are willing to live with this limitation since we could
+//      never store such large numbers anyway.  The length field is used in lieu
+//      of zero padding the BigInts themselves for sorting, which would be
+//      impractical for the same reason that storing large values directly would
+//      be.  The length is zero padded so that numbers are sorted within groups
+//      according to their decimal orders of magnitude in size and then these
+//      groups are sorted smallest to largest.
+//
+// This encoding allows all BigInts to be represented as ASCII strings that sort
+// lexicographically in the same order as the values of the BigInts themselves
+// would sort numerically.
 
 const BIGINT_TAG_LEN = 10;
 const BIGINT_LEN_MODULUS = 10 ** BIGINT_TAG_LEN;
@@ -372,11 +418,11 @@ export function makeCollectionManager(
         );
       }
       if (passStyleOf(key) === 'remotable') {
-        generateOrdinal(key);
         const vref = getSlotForVal(key);
         if (durable) {
           assert(vrm.isDurable(vref), X`key is not durable`);
         }
+        generateOrdinal(key);
         if (hasWeakKeys) {
           vrm.addRecognizableValue(key, entryDeleter);
         } else {
@@ -400,16 +446,16 @@ export function makeCollectionManager(
           X`invalid value type for collection ${q(label)}`,
         );
       }
-      const dbKey = keyToDBKey(key);
-      const rawBefore = syscall.vatstoreGet(dbKey);
-      assert(rawBefore, X`key ${key} not found in collection ${q(label)}`);
-      const before = JSON.parse(rawBefore);
       const after = serialize(harden(value));
       if (durable) {
         after.slots.map(vref =>
           assert(vrm.isDurable(vref), X`value is not durable`),
         );
       }
+      const dbKey = keyToDBKey(key);
+      const rawBefore = syscall.vatstoreGet(dbKey);
+      assert(rawBefore, X`key ${key} not found in collection ${q(label)}`);
+      const before = JSON.parse(rawBefore);
       vrm.updateReferenceCounts(before.slots, after.slots);
       syscall.vatstoreSet(dbKey, JSON.stringify(after));
     }
@@ -427,12 +473,12 @@ export function makeCollectionManager(
       syscall.vatstoreDelete(dbKey);
       let doMoreGC = false;
       if (passStyleOf(key) === 'remotable') {
+        deleteOrdinal(key);
         if (hasWeakKeys) {
           vrm.removeRecognizableValue(key, entryDeleter);
         } else {
           doMoreGC = vrm.removeReachableVref(getSlotForVal(key));
         }
-        deleteOrdinal(key);
       }
       ensureEntryCount();
       entryCount -= 1;
@@ -459,16 +505,18 @@ export function makeCollectionManager(
       function* iter() {
         const generationAtStart = currentGenerationNumber;
         while (priorDBKey !== undefined) {
-          assert(generationAtStart === currentGenerationNumber);
-          const getAfterResult = syscall.vatstoreGetAfter(
+          assert(
+            generationAtStart === currentGenerationNumber,
+            X`keys in store cannot be changed during iteration`,
+          );
+          const [dbKey, dbValue] = syscall.vatstoreGetAfter(
             priorDBKey,
             start,
             end,
           );
-          if (!getAfterResult) {
+          if (!dbKey) {
             break;
           }
-          const [dbKey, dbValue] = getAfterResult;
           if (dbKey < end) {
             priorDBKey = dbKey;
             const key = dbKeyToKey(dbKey);
@@ -627,11 +675,10 @@ export function makeCollectionManager(
     let priorKey = '';
     const keyPrefix = prefixc(subid, '|');
     while (priorKey !== undefined) {
-      const getAfterResult = syscall.vatstoreGetAfter(priorKey, keyPrefix);
-      if (!getAfterResult) {
+      [priorKey] = syscall.vatstoreGetAfter(priorKey, keyPrefix);
+      if (!priorKey) {
         break;
       }
-      priorKey = getAfterResult[0];
       syscall.vatstoreDelete(priorKey);
     }
     return doMoreGC;
@@ -878,10 +925,9 @@ export function makeCollectionManager(
       : collectionToWeakSetStore(reanimateCollection(vobjID));
   }
 
-  const testHooks = { storeSizeInternal };
+  const testHooks = { storeSizeInternal, makeCollection };
 
   return harden({
-    makeCollection,
     makeScalarBigMapStore,
     makeScalarBigWeakMapStore,
     makeScalarBigSetStore,

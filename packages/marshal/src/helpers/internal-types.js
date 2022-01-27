@@ -9,7 +9,7 @@
  *
  * For those methods that have a last `passStyleOf` or `passStyleOfRecur`,
  * they must defend against the other arguments being malicious, but may
- * assume* that `passStyleOfRecur` does what it is supposed to do.
+ * *assume* that `passStyleOfRecur` does what it is supposed to do.
  * Each such method is not trying to defend itself against a malicious
  * `passStyleOfRecur`, though it may defend against some accidents.
  *

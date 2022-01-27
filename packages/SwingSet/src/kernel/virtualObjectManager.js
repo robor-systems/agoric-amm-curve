@@ -141,7 +141,7 @@ export function makeCache(size, fetch, store) {
  *   in memory.
  * @param {*} FinalizationRegistry  Powerful JavaScript intrinsic normally denied by SES
  * @param {*} addToPossiblyDeadSet  Function to record objects whose deaths should be reinvestigated
- * @param {*} addToPossiblyRetiredSet Function to record dead objects whose retirement should be
+ * @param {*=} addToPossiblyRetiredSet Function to record dead objects whose retirement should be
  *   reinvestigated
  *
  * @returns {Object} a new virtual object manager.

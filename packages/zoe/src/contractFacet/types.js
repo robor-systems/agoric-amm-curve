@@ -113,7 +113,7 @@
  * @param {Keyword} keyword
  * @param {FeeMintAccess} allegedFeeMintAccess - an object that
  * purports to be the object that grants access to the fee mint
- * @returns {Promise<ZCFMint>
+ * @returns {Promise<ZCFMint>}
  */
 
 /**

@@ -55,7 +55,7 @@ function* mergeSortedIterators(it1, it2) {
  * that buffers any mutations until told to commit them.
  *
  * @param {*} kvStore  The storage object that this crank buffer will be based on.
- * @param {CreateSHA256}  createSHA256
+ * @param {import('../../hasher.js').CreateSHA256} createSHA256
  * @param { (key: string) => boolean } isConsensusKey
  * @returns {*} an object {
  * crankBuffer,  // crank buffer as described, wrapping `kvStore`

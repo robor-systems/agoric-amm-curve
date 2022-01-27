@@ -20,7 +20,14 @@ function parentLog(first, ...args) {
 // always be Node.
 const stdio = harden(['inherit', 'inherit', 'inherit', 'pipe', 'pipe']);
 
+/**
+ *
+ * @param {string} execPath
+ * @param {string[]} procArgs
+ * @returns {object}
+ */
 export function startSubprocessWorker(execPath, procArgs = []) {
+  /** @type {ChildProcessByStdio<null, null, Readable>} */
   const proc = spawn(execPath, procArgs, { stdio });
 
   const toChild = arrayEncoderStream();

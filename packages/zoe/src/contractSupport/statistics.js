@@ -1,5 +1,5 @@
 /**
- * @template T
+ * @template {number | bigint} T
  * @typedef {Object} TypedMath
  * @property {(a: T, b: T) => T} add
  * @property {(a: T, b: T) => T} divide
@@ -9,7 +9,7 @@
 /**
  * Calculate the median of a set of samples
  *
- * @template T
+ * @template {number | bigint} T
  * @param {Array<T>} samples the input measurements
  * @param {TypedMath<T>} math
  * @returns {T=} the median (undefined if no samples)

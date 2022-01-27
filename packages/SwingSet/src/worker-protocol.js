@@ -22,13 +22,18 @@ export function arrayEncoderStream() {
 }
 
 export function arrayDecoderStream() {
+  /**
+   * @param {any} buf
+   * @param {BufferEncoding} encoding
+   * @param {TransformCallback} callback
+   */
   function transform(buf, encoding, callback) {
     let err;
     try {
       if (!Buffer.isBuffer(buf)) {
         throw Error('stream expects Buffers');
       }
-      this.push(JSON.parse(buf));
+      this.push(JSON.parse(buf.toString(encoding)));
     } catch (e) {
       err = e;
     }

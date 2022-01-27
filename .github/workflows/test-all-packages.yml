@@ -64,6 +64,8 @@ jobs:
       run: yarn lint-check
     - name: format check
       run: yarn format-check
+    - name: types check
+      run: yarn types-check
 
   dev-canary:
     if: ${{github.event_name == 'push'}}

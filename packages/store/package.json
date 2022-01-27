@@ -11,10 +11,9 @@
     "build": "exit 0",
     "test": "ava",
     "test:xs": "exit 0",
-    "lint-fix": "yarn lint:eslint --fix && yarn lint:types",
+    "lint-fix": "yarn lint:eslint --fix",
     "lint-check": "yarn lint",
-    "lint": "yarn lint:types && yarn lint:eslint",
-    "lint:types": "tsc -p jsconfig.json",
+    "lint": "yarn lint:eslint",
     "lint:eslint": "eslint '**/*.js'"
   },
   "repository": {

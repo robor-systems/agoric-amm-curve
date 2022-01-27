@@ -30,10 +30,9 @@
     "test:c8": "c8 $C8_OPTIONS ava --config=ava-nesm.config.js",
     "test:xs": "exit 0",
     "lint-check": "yarn lint",
-    "lint-fix": "yarn lint:eslint --fix && yarn lint:types",
-    "lint": "yarn lint:eslint && yarn lint:types",
-    "lint:eslint": "eslint '**/*.js'",
-    "lint:types": "tsc -p jsconfig.json"
+    "lint-fix": "yarn lint:eslint --fix",
+    "lint": "yarn lint:eslint",
+    "lint:eslint": "eslint '**/*.js'"
   },
   "devDependencies": {
     "@agoric/install-ses": "^0.5.29",

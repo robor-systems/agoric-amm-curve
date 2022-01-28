@@ -1030,9 +1030,8 @@ test('non-pipelined promise queueing', async t => {
 
   function setupB(_s) {
     function dispatch(vatDeliverObject) {
-      const { facetID, method, args, result } = extractMessage(
-        vatDeliverObject,
-      );
+      const { facetID, method, args, result } =
+        extractMessage(vatDeliverObject);
       log.push([facetID, method, args, result]);
     }
     return dispatch;
@@ -1155,9 +1154,8 @@ test('pipelined promise queueing', async t => {
 
   function setupB(_s) {
     function dispatch(vatDeliverObject) {
-      const { facetID, method, args, result } = extractMessage(
-        vatDeliverObject,
-      );
+      const { facetID, method, args, result } =
+        extractMessage(vatDeliverObject);
       log.push([facetID, method, args, result]);
     }
     return dispatch;

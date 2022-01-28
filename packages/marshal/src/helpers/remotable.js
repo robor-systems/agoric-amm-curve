@@ -225,7 +225,7 @@ export const RemotableHelper = harden({
       const { name: nameDesc, length: lengthDesc, ...restDescs } = descs;
       const restKeys = ownKeys(restDescs);
       return (
-        (check(
+        check(
           nameDesc && typeof nameDesc.value === 'string',
           X`Far function name must be a string, in ${candidate}`,
         ) &&
@@ -236,7 +236,7 @@ export const RemotableHelper = harden({
         check(
           restKeys.length === 0,
           X`Far functions unexpected properties besides .name and .length ${restKeys}`,
-        ))
+        )
       );
     } else {
       return check(false, X`unrecognized typeof ${candidate}`);

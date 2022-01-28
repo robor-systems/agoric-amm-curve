@@ -21,9 +21,8 @@ const empty = makeCopySet([]);
  */
 const fullCompare = makeFullOrderComparatorKit(true).antiComparator;
 
-const { isSetSuperset, setDisjointUnion, setDisjointSubtract } = makeSetOps(
-  fullCompare,
-);
+const { isSetSuperset, setDisjointUnion, setDisjointSubtract } =
+  makeSetOps(fullCompare);
 
 /**
  * @type {CopySetMathHelpers}

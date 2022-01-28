@@ -6,10 +6,8 @@ import '../types.js';
 import './internal-types.js';
 
 const { details: X, quote: q } = assert;
-const {
-  getOwnPropertyDescriptor,
-  hasOwnProperty: objectHasOwnProperty,
-} = Object;
+const { getOwnPropertyDescriptor, hasOwnProperty: objectHasOwnProperty } =
+  Object;
 const { apply } = Reflect;
 const { isArray } = Array;
 

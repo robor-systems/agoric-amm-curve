@@ -92,15 +92,11 @@ harden(makeBoard);
 
 /** @param {BootstrapPowers} powers */
 export const makeAddressNameHubs = async ({ consume: { client }, produce }) => {
-  const {
-    nameHub: agoricNames,
-    nameAdmin: agoricNamesAdmin,
-  } = makeNameHubKit();
+  const { nameHub: agoricNames, nameAdmin: agoricNamesAdmin } =
+    makeNameHubKit();
 
-  const {
-    nameHub: namesByAddress,
-    nameAdmin: namesByAddressAdmin,
-  } = makeNameHubKit();
+  const { nameHub: namesByAddress, nameAdmin: namesByAddressAdmin } =
+    makeNameHubKit();
 
   /** @type {Store<NameHub, NameAdmin>} */
   const nameAdmins = makeStore('nameHub');
@@ -127,10 +123,8 @@ export const makeAddressNameHubs = async ({ consume: { client }, produce }) => {
 
   const perAddress = address => {
     // Create a name hub for this address.
-    const {
-      nameHub: myAddressNameHub,
-      nameAdmin: rawMyAddressNameAdmin,
-    } = makeNameHubKit();
+    const { nameHub: myAddressNameHub, nameAdmin: rawMyAddressNameAdmin } =
+      makeNameHubKit();
     // Register it with the namesByAddress hub.
     namesByAddressAdmin.update(address, myAddressNameHub);
 

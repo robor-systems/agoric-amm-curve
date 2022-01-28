@@ -604,11 +604,8 @@ test('virtualized weak collection operations', t => {
   // TODO: don't yet have a way to test the weakness of the virtualized weak
   // collections
 
-  const {
-    VirtualObjectAwareWeakMap,
-    VirtualObjectAwareWeakSet,
-    makeKind,
-  } = makeFakeVirtualObjectManager({ cacheSize: 3 });
+  const { VirtualObjectAwareWeakMap, VirtualObjectAwareWeakSet, makeKind } =
+    makeFakeVirtualObjectManager({ cacheSize: 3 });
 
   const thingMaker = makeKind(makeThingInstance);
   const zotMaker = makeKind(makeZotInstance);

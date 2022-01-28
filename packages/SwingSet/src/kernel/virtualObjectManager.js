@@ -365,7 +365,7 @@ export function makeVirtualObjectManager(
           const remotable = requiredValForSlot(vref);
           if (remotableRefCounts.has(remotable)) {
             /** @type {number} */
-            const oldRefCount = (remotableRefCounts.get(remotable));
+            const oldRefCount = remotableRefCounts.get(remotable);
             remotableRefCounts.set(remotable, oldRefCount + 1);
           } else {
             remotableRefCounts.set(remotable, 1);
@@ -390,7 +390,7 @@ export function makeVirtualObjectManager(
           // exported non-virtual object: Remotable
           const remotable = requiredValForSlot(vref);
           /** @type {number} */
-          const oldRefCount = (remotableRefCounts.get(remotable));
+          const oldRefCount = remotableRefCounts.get(remotable);
           assert(oldRefCount > 0, `attempt to decref ${vref} below 0`);
           if (oldRefCount === 1) {
             remotableRefCounts.delete(remotable);
@@ -999,8 +999,11 @@ export function makeVirtualObjectManager(
     function reanimate(vobjID, proForma) {
       // kdebug(`vo reanimate ${vobjID}`);
       const innerSelf = cache.lookup(vobjID, false);
-      const representative = makeRepresentative(innerSelf, false, proForma)
-        .self;
+      const representative = makeRepresentative(
+        innerSelf,
+        false,
+        proForma,
+      ).self;
       if (proForma) {
         return null;
       } else {

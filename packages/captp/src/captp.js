@@ -603,95 +603,101 @@ export const makeCapTP = (
     assert.typeof(trapGuest, 'function', X`opts.trapGuest must be a function`);
 
     // Create the Trap proxy maker.
-    const makeTrapImpl = implMethod => (target, ...implArgs) => {
-      assert(
-        Promise.resolve(target) !== target,
-        X`Trap(${target}) target cannot be a promise`,
-      );
+    const makeTrapImpl =
+      implMethod =>
+      (target, ...implArgs) => {
+        assert(
+          Promise.resolve(target) !== target,
+          X`Trap(${target}) target cannot be a promise`,
+        );
 
-      const slot = valToSlot.get(target);
-      assert(
-        slot && slot[1] === '-',
-        X`Trap(${target}) target was not imported`,
-      );
-      assert(
-        slot[0] === 't',
-        X`Trap(${target}) imported target was not created with makeTrapHandler`,
-      );
+        const slot = valToSlot.get(target);
+        assert(
+          slot && slot[1] === '-',
+          X`Trap(${target}) target was not imported`,
+        );
+        assert(
+          slot[0] === 't',
+          X`Trap(${target}) imported target was not created with makeTrapHandler`,
+        );
 
-      // Send a "trap" message.
-      lastQuestionID += 1;
-      const questionID = `${ourId}#${lastQuestionID}`;
+        // Send a "trap" message.
+        lastQuestionID += 1;
+        const questionID = `${ourId}#${lastQuestionID}`;
 
-      // Encode the "method" parameter of the CTP_CALL.
-      let method;
-      switch (implMethod) {
-        case 'get': {
-          const [prop] = implArgs;
-          method = serialize(harden([prop]));
-          break;
+        // Encode the "method" parameter of the CTP_CALL.
+        let method;
+        switch (implMethod) {
+          case 'get': {
+            const [prop] = implArgs;
+            method = serialize(harden([prop]));
+            break;
+          }
+          case 'applyFunction': {
+            const [args] = implArgs;
+            method = serialize(harden([null, args]));
+            break;
+          }
+          case 'applyMethod': {
+            const [prop, args] = implArgs;
+            method = serialize(harden([prop, args]));
+            break;
+          }
+          default: {
+            assert.fail(
+              X`Internal error; unrecognized implMethod ${implMethod}`,
+            );
+          }
         }
-        case 'applyFunction': {
-          const [args] = implArgs;
-          method = serialize(harden([null, args]));
-          break;
-        }
-        case 'applyMethod': {
-          const [prop, args] = implArgs;
-          method = serialize(harden([prop, args]));
-          break;
-        }
-        default: {
-          assert.fail(X`Internal error; unrecognized implMethod ${implMethod}`);
-        }
-      }
 
-      // Set up the trap call with its identifying information and a way to send
-      // messages over the current CapTP data channel.
-      const [isException, serialized] = trapGuest({
-        trapMethod: implMethod,
-        slot,
-        trapArgs: implArgs,
-        startTrap: () => {
-          // Send the call metadata over the connection.
-          send({
-            type: 'CTP_CALL',
-            epoch,
-            trap: true, // This is the magic marker.
-            questionID,
-            target: slot,
-            method,
-          });
-
-          // Return an IterationObserver.
-          const makeIteratorMethod = (iteratorMethod, done) => (...args) => {
+        // Set up the trap call with its identifying information and a way to send
+        // messages over the current CapTP data channel.
+        const [isException, serialized] = trapGuest({
+          trapMethod: implMethod,
+          slot,
+          trapArgs: implArgs,
+          startTrap: () => {
+            // Send the call metadata over the connection.
             send({
-              type: 'CTP_TRAP_ITERATE',
+              type: 'CTP_CALL',
               epoch,
+              trap: true, // This is the magic marker.
               questionID,
-              serialized: serialize(harden([iteratorMethod, args])),
+              target: slot,
+              method,
             });
-            return harden({ done, value: undefined });
-          };
-          return harden({
-            next: makeIteratorMethod('next', false),
-            return: makeIteratorMethod('return', true),
-            throw: makeIteratorMethod('throw', true),
-          });
-        },
-      });
 
-      const value = unserialize(serialized);
-      assert(
-        !isThenable(value),
-        X`Trap(${target}) reply cannot be a Thenable; have ${value}`,
-      );
+            // Return an IterationObserver.
+            const makeIteratorMethod =
+              (iteratorMethod, done) =>
+              (...args) => {
+                send({
+                  type: 'CTP_TRAP_ITERATE',
+                  epoch,
+                  questionID,
+                  serialized: serialize(harden([iteratorMethod, args])),
+                });
+                return harden({ done, value: undefined });
+              };
+            return harden({
+              next: makeIteratorMethod('next', false),
+              return: makeIteratorMethod('return', true),
+              throw: makeIteratorMethod('throw', true),
+            });
+          },
+        });
 
-      if (isException) {
-        throw value;
-      }
-      return value;
-    };
+        const value = unserialize(serialized);
+        assert(
+          !isThenable(value),
+          X`Trap(${target}) reply cannot be a Thenable; have ${value}`,
+        );
+
+        if (isException) {
+          throw value;
+        }
+        return value;
+      };
 
     /** @type {TrapImpl} */
     const trapImpl = {

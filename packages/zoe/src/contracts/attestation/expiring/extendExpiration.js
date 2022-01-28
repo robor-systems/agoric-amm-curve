@@ -34,12 +34,8 @@ const extendExpiration = (
   const attestationValue = /** @type {SetValue} */ (oldAttestationAmount.value);
 
   const makeNewAttestationElem = oldAttestationElem => {
-    const {
-      expiration,
-      handle,
-      address,
-      amountLiened,
-    } = /** @type {ExpiringAttElem} */ oldAttestationElem;
+    const { expiration, handle, address, amountLiened } =
+      /** @type {ExpiringAttElem} */ oldAttestationElem;
 
     assert(
       canExtend(address),

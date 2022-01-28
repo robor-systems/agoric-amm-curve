@@ -69,7 +69,8 @@ test('natMathHelpers coerce', t => {
         }),
       ),
     {
-      message: /The brand in the allegedAmount .* in 'coerce' didn't match the specified brand/,
+      message:
+        /The brand in the allegedAmount .* in 'coerce' didn't match the specified brand/,
     },
     `coerce can't take the wrong brand`,
   );

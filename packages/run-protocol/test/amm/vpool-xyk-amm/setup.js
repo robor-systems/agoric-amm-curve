@@ -85,10 +85,8 @@ const setupAmmServices = async (
     counter,
   };
 
-  const {
-    creatorFacet: committeeCreator,
-    instance: electorateInstance,
-  } = await E(zoe).startInstance(installs.electorate, {}, electorateTerms);
+  const { creatorFacet: committeeCreator, instance: electorateInstance } =
+    await E(zoe).startInstance(installs.electorate, {}, electorateTerms);
 
   const poserInvitationP = E(committeeCreator).getPoserInvitation();
   const [poserInvitation, poserInvitationAmount] = await Promise.all([

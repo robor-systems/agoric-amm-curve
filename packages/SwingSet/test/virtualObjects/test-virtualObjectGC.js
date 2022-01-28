@@ -560,12 +560,8 @@ test.serial('VO lifecycle 1', async t => {
 // test 2: lerv -> Lerv -> LerV -> lerV -> LerV -> LERV -> lERV -> LERV ->
 //   lERV -> LERV -> lERV -> leRV -> LeRV -> leRV -> LeRV -> LerV
 test.serial('VO lifecycle 2', async t => {
-  const {
-    v,
-    dispatchMessage,
-    dispatchDropExports,
-    dispatchRetireExports,
-  } = setupLifecycleTest(t);
+  const { v, dispatchMessage, dispatchDropExports, dispatchRetireExports } =
+    setupLifecycleTest(t);
 
   // lerv -> Lerv  Create VO
   let rp = await dispatchMessage('makeAndHold');
@@ -630,12 +626,8 @@ test.serial('VO lifecycle 2', async t => {
 
 // test 3: lerv -> Lerv -> LerV -> LERV -> LeRV -> leRV -> lerV -> lerv
 test.serial('VO lifecycle 3', async t => {
-  const {
-    v,
-    dispatchMessage,
-    dispatchDropExports,
-    dispatchRetireExports,
-  } = setupLifecycleTest(t);
+  const { v, dispatchMessage, dispatchDropExports, dispatchRetireExports } =
+    setupLifecycleTest(t);
 
   // lerv -> Lerv  Create VO
   let rp = await dispatchMessage('makeAndHold');
@@ -689,12 +681,8 @@ test.serial('VO lifecycle 4', async t => {
 
 // test 5: lerv -> Lerv -> LERv -> LeRv -> Lerv -> lerv
 test.serial('VO lifecycle 5', async t => {
-  const {
-    v,
-    dispatchMessage,
-    dispatchDropExports,
-    dispatchRetireExports,
-  } = setupLifecycleTest(t);
+  const { v, dispatchMessage, dispatchDropExports, dispatchRetireExports } =
+    setupLifecycleTest(t);
 
   // lerv -> Lerv  Create VO
   let rp = await dispatchMessage('makeAndHold');
@@ -1121,12 +1109,8 @@ test.serial('verify VO weak key GC', async t => {
 });
 
 test.serial('verify presence weak key GC', async t => {
-  const {
-    v,
-    dispatchMessage,
-    dispatchRetireImports,
-    testHooks,
-  } = setupLifecycleTest(t);
+  const { v, dispatchMessage, dispatchRetireImports, testHooks } =
+    setupLifecycleTest(t);
 
   validate(v, matchVatstoreSet('vom.o+1/1', cacheObjValue));
   validateDone(v);

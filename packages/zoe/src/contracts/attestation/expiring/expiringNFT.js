@@ -34,10 +34,8 @@ const { details: X } = assert;
 const setupAttestation = async (attestationTokenName, empty, zcf) => {
   assert(AmountMath.isEmpty(empty), X`empty ${empty} was not empty`);
   const zcfMint = await zcf.makeZCFMint(attestationTokenName, AssetKind.SET);
-  const {
-    brand: attestationBrand,
-    issuer: attestationIssuer,
-  } = zcfMint.getIssuerRecord();
+  const { brand: attestationBrand, issuer: attestationIssuer } =
+    zcfMint.getIssuerRecord();
 
   const externalBrand = empty.brand;
 

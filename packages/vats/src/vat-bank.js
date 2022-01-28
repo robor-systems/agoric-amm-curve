@@ -163,10 +163,8 @@ export function buildRootObject(_vatPowers) {
        * @property {string} proposedName
        */
       /** @type {SubscriptionRecord<AssetDescriptor>} */
-      const {
-        subscription: assetSubscription,
-        publication: assetPublication,
-      } = makeSubscriptionKit();
+      const { subscription: assetSubscription, publication: assetPublication } =
+        makeSubscriptionKit();
 
       /** @type {Store<string, Bank>} */
       const addressToBank = makeStore('address');

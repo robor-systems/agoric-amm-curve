@@ -9,50 +9,44 @@ import { setupZCFTest } from '../../../zcf/setupZcfTest.js';
 
 import { setupAttestation } from '../../../../../src/contracts/attestation/expiring/expiringNFT.js';
 
-const makeDoExtendExpiration = (zoe, issuer, makeExtendAttInvitation) => async (
-  attestation,
-  newExpiration,
-) => {
-  const invitation = makeExtendAttInvitation(newExpiration);
-  const attestationAmount = await E(issuer).getAmountOf(attestation);
-  const proposal = harden({ give: { Attestation: attestationAmount } });
-  const payments = harden({ Attestation: attestation });
-  const userSeat = E(zoe).offer(invitation, proposal, payments);
-  const extendedAttestation = E(userSeat).getPayout('Attestation');
-  return harden({
-    attestation: extendedAttestation,
-    userSeat,
-  });
-};
+const makeDoExtendExpiration =
+  (zoe, issuer, makeExtendAttInvitation) =>
+  async (attestation, newExpiration) => {
+    const invitation = makeExtendAttInvitation(newExpiration);
+    const attestationAmount = await E(issuer).getAmountOf(attestation);
+    const proposal = harden({ give: { Attestation: attestationAmount } });
+    const payments = harden({ Attestation: attestation });
+    const userSeat = E(zoe).offer(invitation, proposal, payments);
+    const extendedAttestation = E(userSeat).getPayout('Attestation');
+    return harden({
+      attestation: extendedAttestation,
+      userSeat,
+    });
+  };
 
-const makeTestAttestationAmount = (t, issuer, brand, address) => async (
-  attestation,
-  amountLiened,
-  expiration,
-  handle,
-) => {
-  const attestationAmount = await E(issuer).getAmountOf(attestation);
-  const attestationHandle = attestationAmount.value[0].handle;
-  const expectedHandle = handle !== undefined ? handle : attestationHandle;
+const makeTestAttestationAmount =
+  (t, issuer, brand, address) =>
+  async (attestation, amountLiened, expiration, handle) => {
+    const attestationAmount = await E(issuer).getAmountOf(attestation);
+    const attestationHandle = attestationAmount.value[0].handle;
+    const expectedHandle = handle !== undefined ? handle : attestationHandle;
 
-  t.deepEqual(attestationAmount.value, [
-    {
-      address,
-      amountLiened,
-      expiration,
-      handle: expectedHandle,
-    },
-  ]);
-  t.is(attestationAmount.brand, brand);
-  return attestationHandle;
-};
+    t.deepEqual(attestationAmount.value, [
+      {
+        address,
+        amountLiened,
+        expiration,
+        handle: expectedHandle,
+      },
+    ]);
+    t.is(attestationAmount.brand, brand);
+    return attestationHandle;
+  };
 
-const makeTestLienAmount = (t, getLienAmount, address) => (
-  currentTime,
-  expectedLien,
-) => {
-  t.deepEqual(getLienAmount(address, currentTime), expectedLien);
-};
+const makeTestLienAmount =
+  (t, getLienAmount, address) => (currentTime, expectedLien) => {
+    t.deepEqual(getLienAmount(address, currentTime), expectedLien);
+  };
 
 test(`typical flow`, async t => {
   const attestationTokenName = 'Token';

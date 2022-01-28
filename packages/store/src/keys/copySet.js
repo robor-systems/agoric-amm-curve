@@ -21,18 +21,20 @@ const { details: X } = assert;
  * @param {FullCompare} fullCompare
  * @returns {(keys: Key[], check?: Checker) => boolean}
  */
-export const makeCheckNoDuplicates = fullCompare => (keys, check = x => x) => {
-  keys = sortByRank(keys, fullCompare);
-  const { length } = keys;
-  for (let i = 1; i < length; i += 1) {
-    const k0 = keys[i - 1];
-    const k1 = keys[i];
-    if (fullCompare(k0, k1) === 0) {
-      return check(false, X`value has duplicates: ${k0}`);
+export const makeCheckNoDuplicates =
+  fullCompare =>
+  (keys, check = x => x) => {
+    keys = sortByRank(keys, fullCompare);
+    const { length } = keys;
+    for (let i = 1; i < length; i += 1) {
+      const k0 = keys[i - 1];
+      const k1 = keys[i];
+      if (fullCompare(k0, k1) === 0) {
+        return check(false, X`value has duplicates: ${k0}`);
+      }
     }
-  }
-  return true;
-};
+    return true;
+  };
 
 /**
  * TODO SECURITY HAZARD: https://github.com/Agoric/agoric-sdk/issues/4261

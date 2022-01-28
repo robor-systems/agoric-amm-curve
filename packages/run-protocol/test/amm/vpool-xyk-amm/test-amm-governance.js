@@ -22,14 +22,8 @@ test('amm change param via Governance', async t => {
   const electorateTerms = { committeeName: 'EnBancPanel', committeeSize: 3 };
   const timer = buildManualTimer(console.log);
 
-  const {
-    zoe,
-    amm,
-    committeeCreator,
-    governor,
-    installs,
-    invitationAmount,
-  } = await setupAmmServices(electorateTerms, centralR, timer);
+  const { zoe, amm, committeeCreator, governor, installs, invitationAmount } =
+    await setupAmmServices(electorateTerms, centralR, timer);
 
   t.deepEqual(
     await E(amm.ammPublicFacet).getGovernedParams(),
@@ -84,14 +78,8 @@ test('price check after Governance param change', async t => {
   const electorateTerms = { committeeName: 'EnBancPanel', committeeSize: 3 };
   const timer = buildManualTimer(console.log);
 
-  const {
-    zoe,
-    amm,
-    committeeCreator,
-    governor,
-    installs,
-    invitationAmount,
-  } = await setupAmmServices(electorateTerms, centralR, timer);
+  const { zoe, amm, committeeCreator, governor, installs, invitationAmount } =
+    await setupAmmServices(electorateTerms, centralR, timer);
 
   // Setup Alice
   const aliceMoolaPayment = moolaR.mint.mintPayment(moola(100000n));

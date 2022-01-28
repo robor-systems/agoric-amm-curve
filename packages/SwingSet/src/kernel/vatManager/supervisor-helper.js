@@ -62,7 +62,7 @@ export { makeSupervisorDispatch };
  * @returns { TheSyscallObjectWithMethodsThatLiveslotsWants }
  */
 function makeSupervisorSyscall(syscallToManager, workerCanBlock) {
-  /** @type { (fields: unknown[]) => (null | string | SwingSetCapData) } */
+  /** @type { (fields: unknown[]) => (SwingSetCapData | string | string[] | null) } */
   function doSyscall(fields) {
     insistVatSyscallObject(fields);
     /** @type { VatSyscallObject } */

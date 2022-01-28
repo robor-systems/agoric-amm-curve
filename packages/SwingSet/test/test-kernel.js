@@ -170,12 +170,7 @@ test('vat store', async t => {
   kernel.queueToKref(o1, 'get', capdata('[]'));
   t.deepEqual(log, []);
   await kernel.run();
-  t.deepEqual(log, [
-    'undefined',
-    '"first value"',
-    '"second value"',
-    'undefined',
-  ]);
+  t.deepEqual(log, ['null', '"first value"', '"second value"', 'null']);
   const data = kernel.dump();
   // check that we're not sticking an undefined into the transcript
   t.is(data.vatTables[0].state.transcript[1].syscalls[0].response, null);

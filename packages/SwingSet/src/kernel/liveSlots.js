@@ -1089,7 +1089,8 @@ function build(
       vpow.vatstore = harden({
         get: key => {
           insistValidVatstoreKey(key);
-          return syscall.vatstoreGet(`vvs.${key}`);
+          const value = syscall.vatstoreGet(`vvs.${key}`);
+          return value === null ? undefined : value;
         },
         set: (key, value) => {
           insistValidVatstoreKey(key);

@@ -50,7 +50,7 @@ function makeSyscallStore(syscall) {
 }
 
 function commaSplit(s) {
-  if (s === undefined || s === '') {
+  if (!s || s === '') {
     return [];
   }
   return s.split(',');

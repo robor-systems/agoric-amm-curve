@@ -1,16 +1,17 @@
 // eslint-disable-next-line import/order
-import { test } from '../tools/prepare-test-env-ava.js';
+import { test } from '../../tools/prepare-test-env-ava.js';
 
 import bundleSource from '@agoric/bundle-source';
 import { getAllState } from '@agoric/swing-store';
-import { provideHostStorage } from '../src/hostStorage.js';
+import { parse } from '@agoric/marshal';
+import { provideHostStorage } from '../../src/hostStorage.js';
 
 import {
   initializeSwingset,
   makeSwingsetController,
   buildKernelBundles,
-} from '../src/index.js';
-import buildCommand from '../src/devices/command.js';
+} from '../../src/index.js';
+import buildCommand from '../../src/devices/command.js';
 
 function capdata(body, slots = []) {
   return harden({ body, slots });
@@ -21,7 +22,7 @@ function capargs(args, slots = []) {
 }
 
 function dfile(name) {
-  return new URL(`./files-devices/${name}`, import.meta.url).pathname;
+  return new URL(`./${name}`, import.meta.url).pathname;
 }
 
 test.before(async t => {
@@ -31,6 +32,8 @@ test.before(async t => {
   const bootstrap2 = await bundleSource(dfile('bootstrap-2'));
   const bootstrap3 = await bundleSource(dfile('bootstrap-3'));
   const bootstrap4 = await bundleSource(dfile('bootstrap-4'));
+  const bootstrap5 = await bundleSource(dfile('bootstrap-5'));
+  const bootstrap6 = await bundleSource(dfile('bootstrap-6'));
   t.context.data = {
     kernelBundles,
     bootstrap0,
@@ -38,6 +41,8 @@ test.before(async t => {
     bootstrap2,
     bootstrap3,
     bootstrap4,
+    bootstrap5,
+    bootstrap6,
   };
 });
 
@@ -52,7 +57,7 @@ test.serial('d0', async t => {
     },
     devices: {
       d0: {
-        sourceSpec: new URL('files-devices/device-0', import.meta.url).pathname,
+        sourceSpec: dfile('device-0'),
       },
     },
   };
@@ -98,7 +103,7 @@ test.serial('d1', async t => {
     },
     devices: {
       d1: {
-        sourceSpec: new URL('files-devices/device-1', import.meta.url).pathname,
+        sourceSpec: dfile('device-1'),
       },
     },
   };
@@ -131,13 +136,12 @@ async function test2(t, mode) {
         bundle: t.context.data.bootstrap2,
       },
       left: {
-        sourceSpec: new URL('files-devices/vat-left.js', import.meta.url)
-          .pathname,
+        sourceSpec: dfile('vat-left.js'),
       },
     },
     devices: {
       d2: {
-        sourceSpec: new URL('files-devices/device-2', import.meta.url).pathname,
+        sourceSpec: dfile('device-2'),
         creationOptions: { unendowed: true },
       },
     },
@@ -226,7 +230,7 @@ test.serial('device state', async t => {
     },
     devices: {
       d3: {
-        sourceSpec: new URL('files-devices/device-3', import.meta.url).pathname,
+        sourceSpec: dfile('device-3'),
         creationOptions: { unendowed: true },
       },
     },
@@ -324,7 +328,7 @@ test.serial('liveslots throws when D() gets promise', async t => {
     },
     devices: {
       d0: {
-        sourceSpec: new URL('files-devices/device-0', import.meta.url).pathname,
+        sourceSpec: dfile('device-0'),
         creationOptions: { unendowed: true },
       },
     },
@@ -360,7 +364,7 @@ test.serial('syscall.callNow(promise) is vat-fatal', async t => {
     },
     devices: {
       d0: {
-        sourceSpec: new URL('files-devices/device-0', import.meta.url).pathname,
+        sourceSpec: dfile('device-0'),
         creationOptions: { unendowed: true },
       },
     },
@@ -376,4 +380,76 @@ test.serial('syscall.callNow(promise) is vat-fatal', async t => {
   t.throws(() => c.queueToVatRoot('bootstrap', 'ping', capargs([])), {
     message: /vat name .* must exist, but doesn't/,
   });
+});
+
+test.serial('device errors cause vat-catchable D error', async t => {
+  const hostStorage = provideHostStorage();
+  const config = {
+    bootstrap: 'bootstrap',
+    vats: {
+      bootstrap: {
+        bundle: t.context.data.bootstrap5,
+      },
+    },
+    devices: {
+      d5: {
+        sourceSpec: dfile('device-5'),
+        creationOptions: { unendowed: true },
+      },
+    },
+  };
+
+  const bootstrapResult = await initializeSwingset(
+    config,
+    [],
+    hostStorage,
+    t.context.data,
+  );
+  const c = await makeSwingsetController(hostStorage, {});
+  await c.run();
+
+  t.is(c.kpStatus(bootstrapResult), 'fulfilled'); // not 'rejected'
+  const r = c.kpResolution(bootstrapResult);
+  const expected = Error(
+    'syscall.callNow failed: device.invoke failed, see logs for details',
+  );
+  t.deepEqual(parse(r.body), ['got', expected]);
+});
+
+test.serial('foreign device nodes cause a catchable error', async t => {
+  const hostStorage = provideHostStorage();
+  const config = {
+    bootstrap: 'bootstrap',
+    vats: {
+      bootstrap: {
+        bundle: t.context.data.bootstrap6,
+      },
+    },
+    devices: {
+      d6first: {
+        sourceSpec: dfile('device-6'),
+        creationOptions: { unendowed: true },
+      },
+      d6second: {
+        sourceSpec: dfile('device-6'),
+        creationOptions: { unendowed: true },
+      },
+    },
+  };
+
+  const bootstrapResult = await initializeSwingset(
+    config,
+    [],
+    hostStorage,
+    t.context.data,
+  );
+  const c = await makeSwingsetController(hostStorage, {});
+  await c.run();
+
+  t.is(c.kpStatus(bootstrapResult), 'fulfilled'); // not 'rejected'
+  const r = c.kpResolution(bootstrapResult);
+  const expected = Error(
+    'syscall.callNow failed: device.invoke failed, see logs for details',
+  );
+  t.deepEqual(parse(r.body), ['got', expected]);
 });

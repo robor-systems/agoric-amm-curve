@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@agoric/install-ses": "^0.5.29",
-    "@endo/ses-ava": "^0.2.13",
+    "@endo/ses-ava": "^0.2.14",
     "ava": "^3.12.1",
     "c8": "^7.7.2"
   },
@@ -49,10 +49,6 @@
     "extends": [
       "@agoric"
     ]
-  },
-  "prettier": {
-    "trailingComma": "all",
-    "singleQuote": true
   },
   "publishConfig": {
     "access": "public"

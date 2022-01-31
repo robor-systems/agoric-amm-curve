@@ -2,8 +2,7 @@
 
 import { Far, filterIterable } from '@agoric/marshal';
 import { compareRank } from '../patterns/rankOrder.js';
-import { assertScalarKey } from '../keys/checkKey.js';
-import { makeCopySet } from '../keys/copySet.js';
+import { assertScalarKey, makeCopySet } from '../keys/checkKey.js';
 import { matches, fit, assertPattern } from '../patterns/patternMatchers.js';
 import { makeWeakSetStoreMethods } from './scalarWeakSetStore.js';
 import { makeCurrentKeysKit } from './store-utils.js';
@@ -89,11 +88,11 @@ export const makeSetStoreMethods = (
  */
 export const makeScalarSetStore = (
   keyName = 'key',
-  { keySchema = undefined } = {},
+  { keyPattern = undefined } = {},
 ) => {
   const jsset = new Set();
-  if (keySchema !== undefined) {
-    assertPattern(keySchema);
+  if (keyPattern !== undefined) {
+    assertPattern(keyPattern);
   }
 
   const assertKeyOkToAdd = key => {
@@ -102,8 +101,8 @@ export const makeScalarSetStore = (
     harden(key);
 
     assertScalarKey(key);
-    if (keySchema !== undefined) {
-      fit(key, keySchema);
+    if (keyPattern !== undefined) {
+      fit(key, keyPattern);
     }
   };
 

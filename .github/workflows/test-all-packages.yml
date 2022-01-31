@@ -34,7 +34,9 @@ jobs:
     # 'yarn install' must be done at the top level, to build all the
     # cross-package symlinks
     - name: yarn install
-      run: yarn install --frozen-lockfile
+      run: yarn install
+    - name: check if git is dirty
+      run: git diff --stat --exit-code
     - name: check dependencies
       run: yarn check-dependencies
     # 'yarn build' loops over all workspaces
@@ -60,6 +62,8 @@ jobs:
 
     - name: lint check
       run: yarn lint-check
+    - name: format check
+      run: yarn format-check
 
   dev-canary:
     if: ${{github.event_name == 'push'}}
@@ -200,8 +204,6 @@ jobs:
       run: cd packages/import-manager && yarn test
     - name: yarn test (install-ses)
       run: cd packages/install-ses && yarn test
-    - name: yarn test (lockdown)
-      run: cd packages/lockdown && yarn test
     - name: yarn test (marshal)
       run: cd packages/marshal && yarn test
     - name: yarn test (notifier)

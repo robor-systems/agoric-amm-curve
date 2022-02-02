@@ -7,10 +7,10 @@ import path from 'path';
 import { AmountMath, AssetKind } from '@agoric/ertp';
 import { E } from '@agoric/eventual-send';
 import { makePromiseKit } from '@agoric/promise-kit';
-import { passStyleOf, Far } from '@agoric/marshal';
+import { passStyleOf, Far } from '@endo/marshal';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-import bundleSource from '@agoric/bundle-source';
+import bundleSource from '@endo/bundle-source';
 
 import { setupZCFTest } from './zcf/setupZcfTest.js';
 import { setup } from './setupBasicMints.js';

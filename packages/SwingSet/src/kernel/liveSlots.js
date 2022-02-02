@@ -5,7 +5,7 @@ import {
   passStyleOf,
   getInterfaceOf,
   makeMarshal,
-} from '@agoric/marshal';
+} from '@endo/marshal';
 import { assert, details as X } from '@agoric/assert';
 import { isPromise } from '@agoric/promise-kit';
 import { insistVatType, makeVatSlot, parseVatSlot } from '../parseVatSlots.js';
@@ -1029,6 +1029,7 @@ function build(
     syscall.exit(false, args);
   }
 
+  /** @type {ExitVatWithFailure} */
   function exitVatWithFailure(reason) {
     meterControl.assertIsMetered(); // else userspace getters could escape
     const args = m.serialize(harden(reason));

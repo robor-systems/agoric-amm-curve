@@ -5,9 +5,9 @@ import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 import path from 'path';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-import bundleSource from '@agoric/bundle-source';
+import bundleSource from '@endo/bundle-source';
 import { E } from '@agoric/eventual-send';
-import { Far } from '@agoric/marshal';
+import { Far } from '@endo/marshal';
 
 import { setup } from '../setupBasicMints.js';
 import buildManualTimer from '../../../tools/manualTimer.js';

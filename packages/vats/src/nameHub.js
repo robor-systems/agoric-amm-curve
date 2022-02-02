@@ -1,9 +1,9 @@
 // @ts-check
 
 import { assert } from '@agoric/assert';
-import { E, Far } from '@agoric/far';
+import { E, Far } from '@endo/far';
 import { makePromiseKit } from '@agoric/promise-kit';
-import { mapIterable } from '@agoric/marshal';
+import { mapIterable } from '@endo/marshal';
 import { makeLegacyMap } from '@agoric/store';
 
 import './types.js';

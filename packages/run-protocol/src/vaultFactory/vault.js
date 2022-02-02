@@ -14,7 +14,7 @@ import { makeNotifierKit } from '@agoric/notifier';
 
 import { makeRatio } from '@agoric/zoe/src/contractSupport/ratio.js';
 import { AmountMath } from '@agoric/ertp';
-import { Far } from '@agoric/marshal';
+import { Far } from '@endo/marshal';
 import { makePromiseKit } from '@agoric/promise-kit';
 import { makeInterestCalculator } from './interest.js';
 
@@ -36,7 +36,14 @@ export const VaultState = {
   CLOSED: 'closed',
 };
 
-/** @type {MakeVaultKit} */
+/**
+ * @param {ContractFacet} zcf
+ * @param {InnerVaultManager} manager
+ * @param {ZCFMint} runMint
+ * @param {ERef<PriceAuthority>} priceAuthority
+ * @param {Timestamp} startTimeStamp
+ * @returns {VaultKit}
+ */
 export const makeVaultKit = (
   zcf,
   manager,

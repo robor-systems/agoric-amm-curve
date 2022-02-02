@@ -1,7 +1,7 @@
 // @ts-check
 
 import { E } from '@agoric/eventual-send';
-import { Far } from '@agoric/marshal';
+import { Far } from '@endo/marshal';
 import { makeRatio } from '@agoric/zoe/src/contractSupport/index.js';
 
 import { INTEREST_RATE_KEY } from '../../../../src/vaultFactory/params';
@@ -157,6 +157,7 @@ const makeBootstrap = (argv, cb, vatPowers) => async (vats, devices) => {
   await E(aliceP).startTest(testName, vaultFactory.publicFacet);
 };
 
+/** @type {BuildRootObjectForTestVat} */
 export function buildRootObject(vatPowers, vatParameters) {
   const { argv, contractBundles: cb } = vatParameters;
   return Far('root', { bootstrap: makeBootstrap(argv, cb, vatPowers) });

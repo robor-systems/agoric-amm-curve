@@ -1,7 +1,7 @@
 // @ts-check
 
 import { E } from '@agoric/eventual-send';
-import { Far } from '@agoric/marshal';
+import { Far } from '@endo/marshal';
 import { AmountMath } from '@agoric/ertp';
 import { daysForVoting } from './bootstrap';
 import { ONE_DAY } from '../setup';
@@ -94,9 +94,7 @@ const build = async (log, zoe, brands, payments, timer) => {
   });
 };
 
-/**
- * @param {VatPowers & {testLog: *}} vatPowers
- */
+/** @type {BuildRootObjectForTestVat} */
 export function buildRootObject(vatPowers) {
   return Far('root', {
     build: (zoe, brands, payments, timer) =>

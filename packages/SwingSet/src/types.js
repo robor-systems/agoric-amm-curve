@@ -7,7 +7,7 @@
  */
 
 /**
- * @typedef {CapData<string>} SwingSetCapData
+ * @typedef {import('@endo/marshal/exported.js').CapData<string>} SwingSetCapData
  */
 
 /**

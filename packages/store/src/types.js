@@ -2,12 +2,12 @@
 
 /// <reference types="ses"/>
 
-/** @typedef {import('@endo/marshal/exported').Passable} Passable */
-/** @typedef {import('@endo/marshal/exported').PassStyle} PassStyle */
-/** @typedef {import('@endo/marshal/exported').CopyTagged} CopyTagged */
-/** @template T @typedef {import('@endo/marshal/exported').CopyRecord<T>} CopyRecord */
-/** @template T @typedef {import('@endo/marshal/exported').CopyArray<T>} CopyArray */
-/** @typedef {import('@endo/marshal/exported').Checker} Checker */
+/** @typedef {import('@endo/marshal/exported.js').Passable} Passable */
+/** @typedef {import('@endo/marshal/exported.js').PassStyle} PassStyle */
+/** @typedef {import('@endo/marshal/exported.js').CopyTagged} CopyTagged */
+/** @template T @typedef {import('@endo/marshal/exported.js').CopyRecord<T>} CopyRecord */
+/** @template T @typedef {import('@endo/marshal/exported.js').CopyArray<T>} CopyArray */
+/** @typedef {import('@endo/marshal/exported.js').Checker} Checker */
 
 /**
  * @typedef {Passable} Key

@@ -27,6 +27,8 @@ import {
   initializeSwingset,
 } from './initializeSwingset.js';
 
+/** @template Slot @typedef {import('@endo/marshal/exported.js').CapData<Slot>} CapData */
+
 /** @param {string} tag */
 function makeConsole(tag) {
   const log = anylogger(tag);

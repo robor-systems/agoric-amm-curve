@@ -39,6 +39,6 @@ Tag recognition | payload encoding | KeyOrder | notes
 ----------------|------------------|----------|-------
 copySet         | -lex elements    | subset   | -lex trick -> above invariants
 copyBag         | -lex entries     | subbag   | -lex trick -> above invariants
-copyMap         | lex keys, values | pareto   | not same keys -> incomparable
+copyMap         | -lex keys, values | pareto  | not same keys -> incomparable
 matcher:*       | per matcher kind | _not a key_ | pattern but not a key
 *other*         |                 | _not a key or pattern_ | unrecognized tagged

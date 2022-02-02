@@ -31,8 +31,8 @@ copyRecord   | lex names, values | pareto      | not same names -> incomparable
 tagged       | lex tag, payload  | _see below_ | rank order independent of kind
 ***Other***  | &nbsp;            | &nbsp;      | &nbsp;
 remotable    | `rankEQ` | `keyEQ` or incomparable | fullOrder is history-dependent
-error        | `rankEQ`          | _not a key_ |
-promise      | `rankEQ`          | _not a key_ |
+error        | `rankEQ`          | _not a key or pattern_ |
+promise      | `rankEQ`          | _not a key or pattern_ |
 
 
 Tag recognition | payload encoding | KeyOrder | notes
@@ -40,5 +40,5 @@ Tag recognition | payload encoding | KeyOrder | notes
 copySet         | -lex elements    | subset   | -lex trick -> above invariants
 copyBag         | -lex entries     | subbag   | -lex trick -> above invariants
 copyMap         | lex keys, values | pareto   | not same keys -> incomparable
-matcher:*       | per matcher kind | _not a key_ |
-*other*         |                  | _not a key_ | anything not recognized
+matcher:*       | per matcher kind | _not a key_ | pattern but not a key
+*other*         |                 | _not a key or pattern_ | unrecognized tagged

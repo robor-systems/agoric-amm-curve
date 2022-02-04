@@ -1,12 +1,19 @@
 // @ts-check
 
+// export {
+//   getInputPrice,
+//   getOutputPrice,
+//   calcLiqValueToMint,
+//   calcValueToRemove,
+//   calcSecondaryRequired,
+// } from './bondingCurves.js';
 export {
   getInputPrice,
   getOutputPrice,
   calcLiqValueToMint,
   calcValueToRemove,
   calcSecondaryRequired,
-} from './bondingCurves.js';
+} from './stableBondingCurves.js';
 
 export * from './priceAuthority.js';
 

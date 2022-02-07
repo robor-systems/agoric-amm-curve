@@ -15,6 +15,8 @@ export {
   calcSecondaryRequired,
 } from './stableBondingCurves.js';
 
+export { getInputPrice2 } from './stableBondingCurves2.js';
+
 export * from './priceAuthority.js';
 
 export {

@@ -6,77 +6,44 @@ import { natSafeMath } from './safeMath.js';
 
 const { subtract, add, multiply, floorDivide, power } = natSafeMath;
 
-const A = 3000;
+let __A = 85;
+let A_PRECISION = 100;
+let A = __A * A_PRECISION;
 const BASIS_POINTS = 10000n; // TODO change to 10_000n once tooling copes.
+const BASIS_POINTS2 = 100000n; // TODO change to 10_000n once tooling copes.
 // const BASIS_POINTS = 1n; // TODO change to 10_000n once tooling copes.
 
 /**
- * Calculations for constant product markets like Uniswap.
- * https://github.com/runtimeverification/verified-smart-contracts/blob/uniswap/uniswap/x-y-k.pdf
- */
-
-/**
- * Computes the the next D.
- *
- * @param {bigint} d_init - index of liquidity of inputReserve
- * in the reserves array.
- * @param {bigint} d_prod - index of liquidity of outputReserve
- * in the reserves array.
- * @param {number} A - The amplification coefficient is used to
- * determine the slippage incurred when performing swaps.The lower
- * it is, the closer the invariant is to the constant product.
- * @param {bigint} sum_x - Sum of liquidities of assets in the pool.
- * @param {number} N_COINS - number of coins in the pool
- *
- * @returns {bigint} d - return the next value of D after changes
- * in pools liquidity
- *
- */
-const compute_next_d = (A, d_init, d_prod, sum_x, N_COINS) => {
-  let d;
-  let ann = multiply(A, power(N_COINS, N_COINS));
-  // leverage = ann * sum_x
-  let leverage = multiply(sum_x, ann);
-  // d_prod = d^(n+1)/n^n(prod_x)
-  // d = ((ann * sum_x + d_prod * n_coins) * d_init) / ((ann - 1) * d_init + (n_coins + 1) * d_prod)
-  let numerator = multiply(d_init, add(multiply(d_prod, N_COINS), leverage));
-  let denominator = add(
-    multiply(d_init, subtract(ann, 1)),
-    multiply(add(N_COINS, 1), d_prod),
-  );
-  d = floorDivide(numerator, denominator);
-  return d;
-};
-
-/**
  * Computes the Stable Swap invariant (D).
- *
- * @param {bigint} amount_a - index of liquidity of inputReserve
- * in the reserves array.
- * @param {bigint} amount_b - index of liquidity of outputReserve
- * in the reserves array.
- * @param {number} A - The amplification coefficient is used to
- * determine the slippage incurred when performing swaps.The lower
- * it is, the closer the invariant is to the constant product.
  * @param {number} N_COINS - number of coins in the pool
+ * @param {[bigint]} reserves - Array of liquidities of each asset.Which is
+ * passed from the contract.
  * @returns {bigint} d - the current price, in value form
 
  */
-const compute_d = (amount_a, amount_b, A, N_COINS) => {
-  let sum_x = add(amount_a, amount_b);
-  let amount_a_times_coins = multiply(amount_a, N_COINS);
-  let amount_b_times_coins = multiply(amount_a, N_COINS);
-
-  // Using Newton's method to approximate D
-  let d_prev;
+const compute_d = (N_COINS, reserves) => {
+  let sum_x = 0n;
+  for (let i = 0; i < N_COINS; i++) {
+    sum_x = sum_x + reserves[i];
+  }
+  if (sum_x === 0n) {
+    return 0n;
+  }
+  let d_prev = 0n;
   let d = sum_x;
-  for (let i = 0; i < 256; i++) {
-    console.log('d:', d);
+  let nA = A * N_COINS;
+  for (let i = 0; i < 1000; i++) {
+    let dp = d;
+    for (let j = 0; j < N_COINS; j++) {
+      dp = (dp * d) / multiply(reserves[j], N_COINS);
+    }
     d_prev = d;
-    let d_prod = d;
-    d_prod = floorDivide(multiply(d_prod, d), amount_a_times_coins);
-    d_prod = floorDivide(multiply(d_prod, d), amount_b_times_coins);
-    d = compute_next_d(A, d, d_prod, sum_x, N_COINS);
+    d =
+      ((floorDivide(multiply(nA, sum_x), A_PRECISION) + add(dp, N_COINS)) * d) /
+      add(
+        floorDivide(subtract(nA, A_PRECISION) * d, A_PRECISION),
+        multiply(add(N_COINS, 1), dp),
+      );
     if (d > d_prev) {
       if (d - d_prev <= 1) break;
     } else {
@@ -93,42 +60,48 @@ const compute_d = (amount_a, amount_b, A, N_COINS) => {
  * in the reserves array.
  * @param {bigint} d - index of liquidity of outputReserve
  * in the reserves array.
- * @param {number} A - The amplification coefficient is used to
- * determine the slippage incurred when performing swaps.The lower
- * it is, the closer the invariant is to the constant product.
  * @param {number} N_COINS - number of coins in the pool
  * @returns {bigint} y - the amount of swap out asset to be returned
  * in exchange for amount x of swap in asset.
  */
 
-const compute_y = (x, d, A, N_COINS) => {
+const compute_y = (x, d, N_COINS, reserves, tokenIndexFrom, tokenIndexTo) => {
+  console.log(x, d, N_COINS, reserves, tokenIndexFrom, tokenIndexTo);
+  let c = d;
+  let s = 0n;
+  const nA = N_COINS * A;
+  let _x = 0n;
+  for (let i = 0; i < N_COINS; i++) {
+    if (i === tokenIndexFrom) {
+      _x = x;
+    } else if (i !== tokenIndexTo) {
+      _x = reserves[i];
+    } else {
+      continue;
+    }
+    s = s + _x;
+    c = (c * d) / multiply(_x, N_COINS);
+  }
   console.log('x:', x);
-  const nn = Math.pow(N_COINS, N_COINS);
-  const ann = A * nn;
-  // let ann = A * N_COINS; // A * n ** n
-  // sum' = prod' = x
-  // c =  D ** (n + 1) / (n ** (2 * n) * prod' * A)
-  let c = floorDivide(multiply(d, d), multiply(x, N_COINS));
-  c = floorDivide(multiply(c, d), multiply(ann, power(N_COINS, N_COINS)));
-  // b = sum' - (A*n**n - 1) * D / (A * n**n)
-  let b = add(floorDivide(d, ann), x);
-  // Solve for y by approximating: y**2 + b*y = c
-  let y_prev;
+  console.log('_x:', _x);
+  console.log('c:', c);
+  console.log('d:', d);
+  console.log('multiply(c * d):', multiply(c, d));
+  console.log('nA * N_COINS:', nA * N_COINS);
+  c = floorDivide(multiply(c * d, A_PRECISION), nA * N_COINS);
+  console.log('done');
+  const b = s + floorDivide(multiply(d, A_PRECISION), nA);
+  let y_prev = 0n;
   let y = d;
-  for (let i = 0; i < 256; i++) {
+  for (let i = 0; i < 1000; i++) {
     y_prev = y;
-    // y = (y * y + c) / (2 * y + b - d);
-    let y_numerator = add(power(y, 2), c);
-    let y_denominator = subtract(add(multiply(y, 2), b), d);
-    y = floorDivide(y_numerator, y_denominator);
-    console.log('Y:', y);
+    y = (y * y + c) / (multiply(y, 2) + b - d);
     if (y > y_prev) {
       if (y - y_prev <= 1) break;
     } else {
       if (y_prev - y <= 1) break;
     }
   }
-  console.log('exit');
   return y;
 };
 
@@ -155,12 +128,12 @@ const compute_y = (x, d, A, N_COINS) => {
  *
  */
 
-export const getInputPrice2 = (
+export const getInputPrice3 = (
   inputReserveIndex,
   outputReserveIndex,
   reserves,
   inputValue,
-  feeBasisPoints = 30n,
+  feeBasisPoints = 40n,
 ) => {
   let number_of_coins = reserves.length;
   console.log('number_of_coins:', number_of_coins);
@@ -169,12 +142,12 @@ export const getInputPrice2 = (
   let outputReserve = Nat(reserves[outputReserveIndex]);
   console.log('inputReserve:', inputReserve);
   console.log('outputReserve:', outputReserve);
-  // assert(inputValue > 0n, X`inputValue ${inputValue} must be positive`);
-  // assert(inputReserve > 0n, X`inputReserve ${inputReserve} must be positive`);
-  // assert(
-  //   outputReserve > 0n,
-  //   X`outputReserve ${outputReserve} must be positive`,
-  // );
+  assert(inputValue > 0n, X`inputValue ${inputValue} must be positive`);
+  assert(inputReserve > 0n, X`inputReserve ${inputReserve} must be positive`);
+  assert(
+    outputReserve > 0n,
+    X`outputReserve ${outputReserve} must be positive`,
+  );
   let sum_x = reserves.reduce((partialSum, x) => partialSum + x, 0n);
   let product_x = reserves.reduce(
     (partialProduct, x) => partialProduct * x,
@@ -185,11 +158,22 @@ export const getInputPrice2 = (
   console.log('Ann:', Ann);
   console.log('Sum:', sum_x);
   console.log('product:', product_x);
-  let D = compute_d(inputReserve, outputReserve, A, number_of_coins);
+  let D = compute_d(number_of_coins, reserves);
   console.log('D:', D);
-  let Y = compute_y(add(inputValue, inputReserve), D, A, number_of_coins);
-  console.log('Y:', Y);
+  let Y = compute_y(
+    add(inputValue, inputReserve),
+    D,
+    number_of_coins,
+    reserves,
+    inputReserveIndex,
+    outputReserveIndex,
+  );
+  console.log('Y Reserve:', Y);
   console.log('Y:', outputReserve - Y);
+  Y = outputReserve - Y;
+  let fee = (Y / BASIS_POINTS) * feeBasisPoints;
+  Y = Y - fee;
+  console.log('after fee:', Y);
   return 0n;
 };
 

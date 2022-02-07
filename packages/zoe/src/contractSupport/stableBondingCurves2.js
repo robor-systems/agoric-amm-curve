@@ -100,7 +100,6 @@ const compute_d = (amount_a, amount_b, A, N_COINS) => {
  * @returns {bigint} y - the amount of swap out asset to be returned
  * in exchange for amount x of swap in asset.
  */
-
 const compute_y = (x, d, A, N_COINS) => {
   console.log('x:', x);
   const nn = Math.pow(N_COINS, N_COINS);

@@ -5,6 +5,7 @@ import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 import {
   getInputPrice,
   getInputPrice2,
+  getInputPrice3,
 } from '../../../src/contractSupport/index.js';
 
 const testGetPrice = (
@@ -12,7 +13,7 @@ const testGetPrice = (
   { inputReserveIndex, outputReserveIndex, Reserves, inputValue },
   expectedOutput,
 ) => {
-  const output = getInputPrice2(
+  const output = getInputPrice3(
     inputReserveIndex,
     outputReserveIndex,
     Reserves,
@@ -25,8 +26,8 @@ test('getInputPrice()', t => {
   const input = {
     inputReserveIndex: 0,
     outputReserveIndex: 1,
-    Reserves: [500n, 10000n],
-    inputValue: 200n,
+    Reserves: [100000n, 100n],
+    inputValue: 1000n,
   };
   const expectedOutput = 0n;
   testGetPrice(t, input, expectedOutput);

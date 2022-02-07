@@ -16,6 +16,7 @@ export {
 } from './stableBondingCurves.js';
 
 export { getInputPrice2 } from './stableBondingCurves2.js';
+export { getInputPrice3 } from './stableBondingCurves3.js';
 
 export * from './priceAuthority.js';
 

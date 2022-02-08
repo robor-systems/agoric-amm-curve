@@ -2,44 +2,29 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 
-import {
-  getInputPrice,
-  getInputPrice2,
-  getInputPrice3,
-} from '../../../src/contractSupport/index.js';
+import { getInputPrice3 } from '../../../src/contractSupport/index.js';
 
 const testGetPrice = (
   t,
-  { inputReserveIndex, outputReserveIndex, Reserves, inputValue },
+  { inputValue, tokenIndexFrom, tokenIndexTo, poolValues },
   expectedOutput,
 ) => {
   const output = getInputPrice3(
-    inputReserveIndex,
-    outputReserveIndex,
-    Reserves,
     inputValue,
+    tokenIndexFrom,
+    tokenIndexTo,
+    poolValues,
   );
   t.deepEqual(output, expectedOutput);
 };
 
 test('getInputPrice()', t => {
   const input = {
-    inputReserveIndex: 0,
-    outputReserveIndex: 1,
-    Reserves: [100000n, 100n],
     inputValue: 1000n,
+    tokenIndexFrom: 1,
+    tokenIndexTo: 0,
+    poolValues: [100000n, 100n, 200n, 400n],
   };
   const expectedOutput = 0n;
   testGetPrice(t, input, expectedOutput);
 });
-
-// test('getInputPrice ok 2', t => {
-//   const input = {
-//     inputReserveIndex: 0,
-//     outputReserveIndex: 1,
-//     Reserves: [100000n, 1000n],
-//     inputValue: 100n,
-//   };
-//   const expectedOutput = 0n;
-//   testGetPrice(t, input, expectedOutput);
-// });

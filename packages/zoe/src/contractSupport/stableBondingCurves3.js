@@ -10,21 +10,27 @@ let __A = 85;
 let A_PRECISION = 100;
 let A = __A * A_PRECISION;
 const BASIS_POINTS = 10000n; // TODO change to 10_000n once tooling copes.
-const BASIS_POINTS2 = 100000n; // TODO change to 10_000n once tooling copes.
 // const BASIS_POINTS = 1n; // TODO change to 10_000n once tooling copes.
+
+function within10(a, b) {
+  if (a > b) {
+    return a - b <= 10;
+  }
+  return b - a <= 10;
+}
 
 /**
  * Computes the Stable Swap invariant (D).
- * @param {number} N_COINS - number of coins in the pool
- * @param {[bigint]} reserves - Array of liquidities of each asset.Which is
+ * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
  * passed from the contract.
  * @returns {bigint} d - the current price, in value form
 
  */
-const compute_d = (N_COINS, reserves) => {
+const getD = poolValues => {
+  let N_COINS = poolValues.length;
   let sum_x = 0n;
   for (let i = 0; i < N_COINS; i++) {
-    sum_x = sum_x + reserves[i];
+    sum_x = sum_x + poolValues[i];
   }
   if (sum_x === 0n) {
     return 0n;
@@ -32,22 +38,21 @@ const compute_d = (N_COINS, reserves) => {
   let d_prev = 0n;
   let d = sum_x;
   let nA = A * N_COINS;
+
   for (let i = 0; i < 1000; i++) {
     let dp = d;
     for (let j = 0; j < N_COINS; j++) {
-      dp = (dp * d) / multiply(reserves[j], N_COINS);
+      dp = (dp * d) / multiply(poolValues[j], N_COINS);
     }
+    console.log('dp:', dp);
     d_prev = d;
     d =
-      ((floorDivide(multiply(nA, sum_x), A_PRECISION) + add(dp, N_COINS)) * d) /
-      add(
-        floorDivide(subtract(nA, A_PRECISION) * d, A_PRECISION),
-        multiply(add(N_COINS, 1), dp),
-      );
-    if (d > d_prev) {
-      if (d - d_prev <= 1) break;
-    } else {
-      if (d_prev - d <= 1) break;
+      (((Nat(nA) * sum_x) / Nat(A_PRECISION) + dp * Nat(N_COINS)) * d) /
+      (((Nat(nA) - Nat(A_PRECISION)) * Nat(d)) / Nat(A_PRECISION) +
+        Nat(N_COINS + 1) * dp);
+    console.log('d:', d);
+    if (within10(d, d_prev)) {
+      return d;
     }
   }
   return d;
@@ -58,15 +63,20 @@ const compute_d = (N_COINS, reserves) => {
  *
  * @param {bigint} x - index of liquidity of inputReserve
  * in the reserves array.
- * @param {bigint} d - index of liquidity of outputReserve
+ * @param {number} tokenIndexFrom - index of liquidity of inputReserve
  * in the reserves array.
- * @param {number} N_COINS - number of coins in the pool
+ * @param {number} tokenIndexTo - index of liquidity of outputReserve
+ * in the reserves array.
+ * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
+ * passed from the contract.
  * @returns {bigint} y - the amount of swap out asset to be returned
  * in exchange for amount x of swap in asset.
  */
 
-const compute_y = (x, d, N_COINS, reserves, tokenIndexFrom, tokenIndexTo) => {
-  console.log(x, d, N_COINS, reserves, tokenIndexFrom, tokenIndexTo);
+const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
+  const d = getD(poolValues);
+  console.log('d:', d);
+  let N_COINS = poolValues.length;
   let c = d;
   let s = 0n;
   const nA = N_COINS * A;
@@ -75,34 +85,49 @@ const compute_y = (x, d, N_COINS, reserves, tokenIndexFrom, tokenIndexTo) => {
     if (i === tokenIndexFrom) {
       _x = x;
     } else if (i !== tokenIndexTo) {
-      _x = reserves[i];
+      _x = poolValues[i];
     } else {
       continue;
     }
     s = s + _x;
     c = (c * d) / multiply(_x, N_COINS);
   }
-  console.log('x:', x);
-  console.log('_x:', _x);
-  console.log('c:', c);
-  console.log('d:', d);
-  console.log('multiply(c * d):', multiply(c, d));
-  console.log('nA * N_COINS:', nA * N_COINS);
   c = floorDivide(multiply(c * d, A_PRECISION), nA * N_COINS);
-  console.log('done');
   const b = s + floorDivide(multiply(d, A_PRECISION), nA);
   let y_prev = 0n;
   let y = d;
   for (let i = 0; i < 1000; i++) {
     y_prev = y;
     y = (y * y + c) / (multiply(y, 2) + b - d);
-    if (y > y_prev) {
-      if (y - y_prev <= 1) break;
-    } else {
-      if (y_prev - y <= 1) break;
+    if (within10(y, y_prev)) {
+      return y;
     }
   }
-  return y;
+  throw new Error('Approximation did not converge');
+};
+
+/**
+ * Contains the logic for calculating the stableSwap rate for
+ * between assets in a pool.Also to returns the amount of token
+ * to be returned in exchange of the swapped in or out token.
+ *
+ * @param {bigint} dx - the value of the asset sent in to be swapped in or out.
+ * @param {number} tokenIndexFrom - index of liquidity of inputReserve
+ * in the reserves array.
+ * @param {number} tokenIndexTo - index of liquidity of outputReserve
+ * in the reserves array.
+ * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
+ * passed from the contract.
+ * @returns {{ outputValue: bigint, price:number}} outputValue - The amount to swap out and the price.
+ *
+ */
+
+const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
+  const x = Nat(dx) + poolValues[tokenIndexFrom];
+  const y = getY(x, tokenIndexFrom, tokenIndexTo, poolValues);
+  let dy = poolValues[tokenIndexTo] - y;
+  let price = Number(dy) / Number(dx);
+  return { outputValue: dy, price: price };
 };
 
 /**
@@ -113,13 +138,13 @@ const compute_y = (x, d, N_COINS, reserves, tokenIndexFrom, tokenIndexTo) => {
  * request, and to do the actual reallocation after an offer has
  * been made.
  *
- * @param {any} inputValue - the value of the asset sent
+ * @param {number} inputValue - the value of the asset sent
  * in to be swapped.
- * @param {number} inputReserveIndex - index of liquidity of inputReserve
+ * @param {number} tokenIndexFrom - index of liquidity of inputReserve
  * in the reserves array.
- * @param {number} outputReserveIndex - index of liquidity of outputReserve
+ * @param {number} tokenIndexTo - index of liquidity of outputReserve
  * in the reserves array.
- * @param {[bigint]} reserves - Array of liquidities of each asset.Which is
+ * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
  * passed from the contract.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee
@@ -129,51 +154,35 @@ const compute_y = (x, d, N_COINS, reserves, tokenIndexFrom, tokenIndexTo) => {
  */
 
 export const getInputPrice3 = (
-  inputReserveIndex,
-  outputReserveIndex,
-  reserves,
   inputValue,
-  feeBasisPoints = 40n,
+  tokenIndexFrom,
+  tokenIndexTo,
+  poolValues,
+  feeBasisPoints = 30n,
 ) => {
-  let number_of_coins = reserves.length;
-  console.log('number_of_coins:', number_of_coins);
-  inputValue = Nat(inputValue);
-  let inputReserve = Nat(reserves[inputReserveIndex]);
-  let outputReserve = Nat(reserves[outputReserveIndex]);
-  console.log('inputReserve:', inputReserve);
-  console.log('outputReserve:', outputReserve);
-  assert(inputValue > 0n, X`inputValue ${inputValue} must be positive`);
+  let input = Nat(inputValue);
+  let inputReserve = Nat(poolValues[tokenIndexFrom]);
+  let outputReserve = Nat(poolValues[tokenIndexTo]);
+  assert(input > 0n, X`inputValue ${input} must be positive`);
   assert(inputReserve > 0n, X`inputReserve ${inputReserve} must be positive`);
   assert(
     outputReserve > 0n,
     X`outputReserve ${outputReserve} must be positive`,
   );
-  let sum_x = reserves.reduce((partialSum, x) => partialSum + x, 0n);
-  let product_x = reserves.reduce(
-    (partialProduct, x) => partialProduct * x,
-    1n,
+  // Normalizing the inputValue according to Basis_Points
+  const oneMinusFeeScaled = subtract(BASIS_POINTS, feeBasisPoints);
+  // Subtracting fee from Input Value
+  let inputValueAfterFee = multiply(input, oneMinusFeeScaled);
+  // Normalizing the poolValue according to Basis_Points
+  poolValues = poolValues.map(value => value * BASIS_POINTS);
+  console.log(inputValueAfterFee, tokenIndexFrom, tokenIndexTo, poolValues);
+  let output = calculateSwap(
+    inputValueAfterFee,
+    tokenIndexFrom,
+    tokenIndexTo,
+    poolValues,
   );
-  const nn = Math.pow(number_of_coins, number_of_coins);
-  const Ann = A * nn;
-  console.log('Ann:', Ann);
-  console.log('Sum:', sum_x);
-  console.log('product:', product_x);
-  let D = compute_d(number_of_coins, reserves);
-  console.log('D:', D);
-  let Y = compute_y(
-    add(inputValue, inputReserve),
-    D,
-    number_of_coins,
-    reserves,
-    inputReserveIndex,
-    outputReserveIndex,
-  );
-  console.log('Y Reserve:', Y);
-  console.log('Y:', outputReserve - Y);
-  Y = outputReserve - Y;
-  let fee = (Y / BASIS_POINTS) * feeBasisPoints;
-  Y = Y - fee;
-  console.log('after fee:', Y);
+  console.log({ inputValue: inputValueAfterFee, ...output });
   return 0n;
 };
 

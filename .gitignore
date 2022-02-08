@@ -63,3 +63,5 @@ bundle-*.js
 /packages.png
 packages/ui-components/compiled
 packages/ui-components/dist
+packages/zoe/src/contractSupport/stableBondingCurves1.js
+packages/zoe/src/contractSupport/stableBondingCurves2.js

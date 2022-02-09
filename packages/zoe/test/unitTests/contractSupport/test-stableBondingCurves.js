@@ -24,6 +24,7 @@ const testGetStablePrice = (
   t.deepEqual(output, output);
 };
 
+
 const testGetStableOutputPrice = (
   t,
   { outputValue, tokenIndexFrom, tokenIndexTo, poolValues },

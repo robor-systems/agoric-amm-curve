@@ -6,9 +6,8 @@ import { natSafeMath } from './safeMath.js';
 
 const { subtract, add, multiply, floorDivide, power, ceilDivide } = natSafeMath;
 
-let __A = 85;
-let A_PRECISION = 100;
-let A = __A * A_PRECISION;
+let A = 85;
+
 const BASIS_POINTS = 10000n; // TODO change to 10_000n once tooling copes.
 // const BASIS_POINTS = 1n; // TODO change to 10_000n once tooling copes.
 
@@ -52,14 +51,10 @@ const getD = poolValues => {
     for (let j = 0; j < N_COINS; j++) {
       dp = (dp * d) / multiply(poolValues[j], N_COINS);
     }
-    //Now dp = D^(n+1)/(n^n(prod_X))
     d_prev = d;
-    // d= ((((na*sum)/A_PRECISION)+dp*n)*d)/
     d =
-      (((Nat(nA) * sum_x) / Nat(A_PRECISION) + dp * Nat(N_COINS)) * d) /
-      (((Nat(nA) - Nat(A_PRECISION)) * Nat(d)) / Nat(A_PRECISION) +
-        Nat(N_COINS + 1) * dp);
-    // Now d= nA
+      ((Nat(nA) * sum_x + dp * Nat(N_COINS)) * d) /
+      ((Nat(nA) - 1n) * Nat(d) + Nat(N_COINS + 1) * dp);
     if (within10(d, d_prev)) {
       return d;
     }
@@ -100,8 +95,8 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
     s = s + _x;
     c = (c * d) / multiply(_x, N_COINS);
   }
-  c = floorDivide(multiply(c * d, A_PRECISION), nA * N_COINS);
-  const b = s + floorDivide(multiply(d, A_PRECISION), nA);
+  c = floorDivide(c * d, nA * N_COINS);
+  const b = s + floorDivide(d, nA);
   let y_prev = 0n;
   let y = d;
   for (let i = 0; i < 1000; i++) {
@@ -221,7 +216,7 @@ export const getStableInputPrice = (
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee is taken from
  * outputValue
- * @returns {{inputValue:bigint,outputValue:bigint,price:number}} returnValue - 
+ * @returns {{inputValue:bigint,outputValue:bigint,price:number}} returnValue -
  * the input amount,the amout to be returned and the price of at which exchanged.
  */
 export const getStableOutputPrice = (

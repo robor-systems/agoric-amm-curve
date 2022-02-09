@@ -2,13 +2,22 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 import { AmountMath } from '@agoric/ertp';
-import { AssetKind, makeIssuerKit } from '@agoric/ertp';
+import { makeIssuerKit } from '@agoric/ertp';
 
 import {
   getStableInputPrice,
   getStableOutputPrice,
 } from '../../../src/contractSupport/index.js';
 
+const coins = ['RUN', 'USDT', 'DAI'];
+const values = [1000000n, 200n, 30000n];
+let brands = coins.map(coin => makeIssuerKit(coin).brand);
+
+const createTokenAmounts = () => {
+  let poolAmounts = [];
+  poolAmounts = brands.map((brand, i) => AmountMath.make(brand, values[i]));
+  return poolAmounts;
+};
 const testGetStablePrice = (
   t,
   { inputValue, tokenIndexFrom, tokenIndexTo, poolValues },
@@ -23,7 +32,6 @@ const testGetStablePrice = (
   console.log(output);
   t.deepEqual(output, output);
 };
-
 
 const testGetStableOutputPrice = (
   t,
@@ -86,4 +94,15 @@ test('Test : Output Value', t => {
   };
   const expectedOutput = 0n;
   testGetStableOutputPrice(t, input, expectedOutput);
+});
+
+test('Test : Code with Amounts', t => {
+  const input = {
+    inputValue: 50n,
+    tokenIndexFrom: 0,
+    tokenIndexTo: 1,
+    poolValues: createTokenAmounts(),
+  };
+  const expectedOutput = 0n;
+  testGetStablePrice(t, input, expectedOutput);
 });

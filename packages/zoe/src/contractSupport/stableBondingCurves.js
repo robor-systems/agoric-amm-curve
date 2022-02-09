@@ -9,7 +9,6 @@ const { subtract, add, multiply, floorDivide, power, ceilDivide } = natSafeMath;
 let A = 85;
 
 const BASIS_POINTS = 10000n; // TODO change to 10_000n once tooling copes.
-// const BASIS_POINTS = 1n; // TODO change to 10_000n once tooling copes.
 
 function within10(a, b) {
   if (a > b) {
@@ -195,6 +194,7 @@ export const getStableInputPrice = (
     inputValue: input,
     outputValue: convertedOutputValue,
   };
+  return 0n;
 };
 
 /**

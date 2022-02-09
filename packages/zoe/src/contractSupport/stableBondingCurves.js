@@ -2,6 +2,13 @@
 
 import { assert, details as X } from '@agoric/assert';
 import { Nat } from '@agoric/nat';
+import { AmountMath } from '@agoric/ertp';
+import {
+  makeRatio,
+  floorMultiplyBy,
+  makeRatioFromAmounts,
+  floorDivideBy,
+} from '@agoric/zoe/src/contractSupport/index.js';
 import { natSafeMath } from './safeMath.js';
 
 const { subtract, add, multiply, floorDivide, power, ceilDivide } = natSafeMath;
@@ -27,7 +34,7 @@ function revertConversion(value) {
 
 /**
  * Computes the Stable Swap invariant (D).
- * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
+ * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
  * passed from the contract.
  * @returns {bigint} d - the current price, in value form
 
@@ -64,13 +71,13 @@ const getD = poolValues => {
 /**
  * Compute the swap amount `y` in proportion to `x`.
  *
- * @param {bigint} x - index of liquidity of inputReserve
+ * @param {bigint} x - index of amount of inputReserve
  * in the reserves array.
- * @param {number} tokenIndexFrom - index of liquidity of inputReserve
+ * @param {number} tokenIndexFrom - index of amount of inputReserve
  * in the reserves array.
- * @param {number} tokenIndexTo - index of liquidity of outputReserve
+ * @param {number} tokenIndexTo - index of amount of outputReserve
  * in the reserves array.
- * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
+ * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
  * passed from the contract.
  * @returns {bigint} y - the amount of swap out asset to be returned
  * in exchange for amount x of swap in asset.
@@ -114,22 +121,21 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
  * to be returned in exchange of the swapped in or out token.
  *
  * @param {bigint} dx - the value of the asset sent in to be swapped in or out.
- * @param {number} tokenIndexFrom - index of liquidity of inputReserve
+ * @param {number} tokenIndexFrom - index of amount of inputReserve
  * in the reserves array.
- * @param {number} tokenIndexTo - index of liquidity of outputReserve
+ * @param {number} tokenIndexTo - index of amount of outputReserve
  * in the reserves array.
- * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
+ * @param {bigint[]} poolValues - Array of amount of each asset.Which is
  * passed from the contract.
- * @returns {{ outputValue: bigint, price:number}} outputValue - The amount to swap out and the price.
+ * @returns {{ outputValue: bigint}} outputValue - The amount to swap out and the price.
  *
  */
 
 const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
-  const x = Nat(dx) + poolValues[tokenIndexFrom];
+  const x = dx + poolValues[tokenIndexFrom];
   const y = getY(x, tokenIndexFrom, tokenIndexTo, poolValues);
   let dy = poolValues[tokenIndexTo] - y;
-  let price = Number(dy) / Number(dx);
-  return { outputValue: dy, price: price };
+  return { outputValue: dy };
 };
 
 /**
@@ -140,61 +146,91 @@ const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
  * request, and to do the actual reallocation after an offer has
  * been made.
  *
- * @param {number} inputValue - the value of the asset sent
+ * @param {Amount} inputAmount - the Amount of the asset sent
  * in to be swapped.
- * @param {number} tokenIndexFrom - index of liquidity of inputReserve
+ * @param {number} tokenIndexFrom - index of amount of inputReserve
  * in the reserves array.
- * @param {number} tokenIndexTo - index of liquidity of outputReserve
+ * @param {number} tokenIndexTo - index of amount of outputReserve
  * in the reserves array.
- * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
+ * @param {Amount[]} poolAmounts - Array of Amountsof each asset.Which is
  * passed from the contract.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee
  * is taken from inputValue
- * @returns {{price:number,inputValue:bigint,outputValue:bigint}}
+ * @returns {{priceRatio:Ratio,inputAmount:Amount,outputAmount:Amount,Basis_Points:bigint}}
  * returnValue - the input amount,the amout to be returned  and the price of at which exchanged.
  *
  */
 
 export const getStableInputPrice = (
-  inputValue,
+  inputAmount,
   tokenIndexFrom,
   tokenIndexTo,
-  poolValues,
+  poolAmounts,
   feeBasisPoints = 30n,
 ) => {
-  let input = Nat(inputValue);
-  let inputReserve = Nat(poolValues[tokenIndexFrom]);
-  let outputReserve = Nat(poolValues[tokenIndexTo]);
-  assert(input > 0n, X`inputValue ${input} must be positive`);
-  assert(inputReserve > 0n, X`inputReserve ${inputReserve} must be positive`);
+  let inputReserve = poolAmounts[tokenIndexFrom];
+  let outputReserve = poolAmounts[tokenIndexTo];
   assert(
-    outputReserve > 0n,
-    X`outputReserve ${outputReserve} must be positive`,
+    inputAmount.value > 0n,
+    X`inputValue ${inputAmount.value} must be positive`,
   );
-  // Normalizing the inputValue according to Basis_Points
-  const oneMinusFeeScaled = subtract(BASIS_POINTS, feeBasisPoints);
-  // Subtracting fee from Input Value
-  let inputValueAfterFee = multiply(input, oneMinusFeeScaled);
+  assert(
+    inputReserve.value > 0n,
+    X`inputReserve ${inputReserve.value} must be positive`,
+  );
+  assert(
+    outputReserve.value > 0n,
+    X`outputReserve ${outputReserve.value} must be positive`,
+  );
+  // Fee ration calculation
+
+  const feeCutRatio = makeRatio(
+    BASIS_POINTS - feeBasisPoints,
+    inputAmount.brand,
+    BASIS_POINTS,
+    inputAmount.brand,
+  );
+  // Fee ratio multiplied by inputAmount to get inputAmount After fee cut
+  let inputAmountAfterFeeCut = floorMultiplyBy(inputAmount, feeCutRatio);
+  inputAmountAfterFeeCut = {
+    brand: inputAmountAfterFeeCut.brand,
+    value: inputAmountAfterFeeCut.value * BASIS_POINTS,
+  };
+  let inputAmountWithoutFeeCut = AmountMath.make(
+    inputAmount.brand,
+    inputAmount.value * BASIS_POINTS,
+  );
   // Normalizing the poolValue according to Basis_Points
-  poolValues = poolValues.map(value => value * BASIS_POINTS);
-  let output = calculateSwap(
-    inputValueAfterFee,
+  let poolAmountsInBasisPoints = poolAmounts.map(amount => {
+    return { ...amount, value: amount.value * BASIS_POINTS };
+  });
+  let poolValues = poolAmountsInBasisPoints.map(amount => amount.value);
+  let swapResult = calculateSwap(
+    inputAmountAfterFeeCut.value,
     tokenIndexFrom,
     tokenIndexTo,
     poolValues,
   );
-  // let convertedInputValue = revertConversion(inputValueAfterFee);
-  let convertedOutputValue = floorDivide(output.outputValue, BASIS_POINTS);
-
-  let price = Number(convertedOutputValue) / Number(input);
-  return {
-    price: Number(price),
-    // convertedPrice: convertedOutputValue / input,
-    inputValue: input,
-    outputValue: convertedOutputValue,
+  let outputAmount = AmountMath.make(
+    poolAmounts[tokenIndexTo].brand,
+    swapResult.outputValue,
+  );
+  let priceRatio = makeRatioFromAmounts(outputAmount, inputAmountWithoutFeeCut);
+  inputAmountWithoutFeeCut = {
+    ...inputAmountWithoutFeeCut,
+    value: inputAmountWithoutFeeCut.value / BASIS_POINTS,
   };
-  return 0n;
+  outputAmount = {
+    ...outputAmount,
+    value: swapResult.outputValue / BASIS_POINTS,
+  };
+  return {
+    priceRatio: priceRatio,
+    inputAmount: inputAmountWithoutFeeCut,
+    outputAmount: outputAmount,
+    Basis_Points: BASIS_POINTS,
+  };
 };
 
 /**
@@ -205,55 +241,83 @@ export const getStableInputPrice = (
  * request, and to do the actual reallocation after an offer has
  * been made.
  *
- * @param {any} outputValue - the value of the asset the user wants
+ * @param {Amount} outputAmount - the value of the asset the user wants
  * to get
- * @param {number} tokenIndexFrom - index of liquidity of inputReserve
+ * @param {number} tokenIndexFrom - index of amount of inputReserve
  * in the reserves array.
- * @param {number} tokenIndexTo - index of liquidity of outputReserve
+ * @param {number} tokenIndexTo - index of amount of outputReserve
  * in the reserves array.
- * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
+ * @param {Amount[]} poolAmounts - Array of amounts of each asset.Which is
  * passed from the contract.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee is taken from
  * outputValue
- * @returns {{inputValue:bigint,outputValue:bigint,price:number}} returnValue -
- * the input amount,the amout to be returned and the price of at which exchanged.
+ * @returns {{priceRatio:Ratio,inputAmount:Amount,outputAmount:Amount,Basis_Points:bigint}}
+ * returnValue - the input amount,the amout to be returned and the price of at which exchanged.
  */
 export const getStableOutputPrice = (
-  outputValue,
+  outputAmount,
   tokenIndexFrom,
   tokenIndexTo,
-  poolValues,
+  poolAmounts,
   feeBasisPoints = 30n,
 ) => {
-  let temp = tokenIndexTo;
+  let t = tokenIndexTo;
   tokenIndexTo = tokenIndexFrom;
-  tokenIndexFrom = temp;
-  let outputVal = Nat(outputValue);
-  let inputReserve = Nat(poolValues[tokenIndexFrom]);
-  let outputReserve = Nat(poolValues[tokenIndexTo]);
-  assert(outputVal > 0n, X`ouputValue ${outputVal} must be positive`);
-  assert(inputReserve > 0n, X`inputReserve ${inputReserve} must be positive`);
+  tokenIndexFrom = t;
+  let inputReserve = poolAmounts[tokenIndexFrom];
+  let outputReserve = poolAmounts[tokenIndexTo];
   assert(
-    outputReserve > 0n,
-    X`outputReserve ${outputReserve} must be positive`,
+    outputAmount.value > 0n,
+    X`outputValue ${outputAmount.value} must be positive`,
   );
-  // Normalizing the inputValue according to Basis_Points
-  const oneMinusFeeScaled = subtract(BASIS_POINTS, feeBasisPoints);
-  poolValues = poolValues.map(value => value * BASIS_POINTS);
-  let output = calculateSwap(
-    outputVal * BASIS_POINTS,
+  assert(
+    inputReserve.value > 0n,
+    X`inputReserve ${inputReserve.value} must be positive`,
+  );
+  assert(
+    outputReserve.value > 0n,
+    X`outputReserve ${outputReserve.value} must be positive`,
+  );
+  let outputAmountBasis = AmountMath.make(
+    outputAmount.brand,
+    outputAmount.value * BASIS_POINTS,
+  );
+  // Normalizing the poolAmounts according to Basis_Points
+  let poolAmountsInBasisPoints = poolAmounts.map(amount => {
+    return { ...amount, value: amount.value * BASIS_POINTS };
+  });
+  let poolValues = poolAmountsInBasisPoints.map(amount => amount.value);
+  let swapResult = calculateSwap(
+    outputAmountBasis.value,
     tokenIndexFrom,
     tokenIndexTo,
     poolValues,
   );
-  let inputVal = output.outputValue / oneMinusFeeScaled;
-  let price = inputVal === 0n ? 0 : Number(outputVal) / Number(inputVal);
-  let convertedPrice = inputVal === 0n ? 0n : outputVal / inputVal;
+  let inputAmount = AmountMath.make(
+    poolAmounts[tokenIndexTo].brand,
+    swapResult.outputValue,
+  );
+  const feeCutRatio = makeRatio(
+    BASIS_POINTS - feeBasisPoints,
+    inputAmount.brand,
+    BASIS_POINTS,
+    inputAmount.brand,
+  );
+  // Fee ratio multiplied by inputAmount to get inputAmount After fee cut
+  let inputAmountAfterFeeCut = floorDivideBy(inputAmount, feeCutRatio);
+  let priceRatio = makeRatioFromAmounts(
+    outputAmountBasis,
+    inputAmountAfterFeeCut,
+  );
+  inputAmountAfterFeeCut = AmountMath.make(
+    inputAmountAfterFeeCut.brand,
+    inputAmountAfterFeeCut.value / BASIS_POINTS,
+  );
   return {
-    price: price,
-    // convertedPrice: convertedPrice,
-    inputValue: inputVal,
-    outputValue: outputVal,
+    priceRatio: priceRatio,
+    inputAmount: inputAmountAfterFeeCut,
+    outputAmount: outputAmount,
+    Basis_Points: BASIS_POINTS,
   };
 };

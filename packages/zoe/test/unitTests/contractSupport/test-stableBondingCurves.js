@@ -9,8 +9,10 @@ import {
   getStableOutputPrice,
 } from '../../../src/contractSupport/index.js';
 
-const coins = ['RUN', 'USDT', 'DAI'];
-const values = [1000000n, 200n, 30000n];
+import { getInputPrice } from '../../../src/contractSupport/index.js';
+
+const coins = ['RUN', 'USDT'];
+const values = [1000000n, 1000000n];
 let brands = coins.map(coin => makeIssuerKit(coin).brand);
 
 const createTokenAmounts = () => {
@@ -18,13 +20,14 @@ const createTokenAmounts = () => {
   poolAmounts = brands.map((brand, i) => AmountMath.make(brand, values[i]));
   return poolAmounts;
 };
-const testGetStablePrice = (
+
+const testGetStableInputPrice = (
   t,
-  { inputValue, tokenIndexFrom, tokenIndexTo, poolValues },
+  { inputAmount, tokenIndexFrom, tokenIndexTo, poolValues },
   expectedOutput,
 ) => {
   const output = getStableInputPrice(
-    inputValue,
+    inputAmount,
     tokenIndexFrom,
     tokenIndexTo,
     poolValues,
@@ -35,11 +38,11 @@ const testGetStablePrice = (
 
 const testGetStableOutputPrice = (
   t,
-  { outputValue, tokenIndexFrom, tokenIndexTo, poolValues },
+  { outputAmount, tokenIndexFrom, tokenIndexTo, poolValues },
   expectedOutput,
 ) => {
   const output = getStableOutputPrice(
-    outputValue,
+    outputAmount,
     tokenIndexFrom,
     tokenIndexTo,
     poolValues,
@@ -48,61 +51,25 @@ const testGetStableOutputPrice = (
   t.deepEqual(output, output);
 };
 
-test('Test : Multiple tokens in the pool', t => {
-  console.log('Test : Multiple tokens in the pool');
+test('Test InputPriceFunction() : Code with Amounts', t => {
   const input = {
-    inputValue: 1000n,
-    tokenIndexFrom: 1,
-    tokenIndexTo: 0,
-    poolValues: [100000n, 100n, 200n, 400n],
-  };
-  const expectedOutput = 0n;
-  testGetStablePrice(t, input, expectedOutput);
-});
-
-test('Test : Large difference in liquidities of two assets in pool', t => {
-  console.log('\nTest : Large difference in pool amount');
-  const input = {
-    inputValue: 1839n,
+    inputAmount: AmountMath.make(brands[0], 3n),
     tokenIndexFrom: 0,
     tokenIndexTo: 1,
-    poolValues: [1000000n, 200n],
+    poolValues: createTokenAmounts(),
   };
+
   const expectedOutput = 0n;
-  testGetStablePrice(t, input, expectedOutput);
+  testGetStableInputPrice(t, input, expectedOutput);
 });
 
-test('Test : Large difference in liquidities of two assets in pool2', t => {
-  console.log('\nTest : Input Value');
+test('Test OutputPriceFunction() : Code with Amounts', t => {
   const input = {
-    inputValue: 58n,
-    tokenIndexFrom: 0,
-    tokenIndexTo: 1,
-    poolValues: [1000000n, 100000n],
-  };
-  const expectedOutput = 0n;
-  testGetStablePrice(t, input, expectedOutput);
-});
-
-test('Test : Output Value', t => {
-  console.log('\nTest : Output Value');
-  const input = {
-    outputValue: 50n,
-    tokenIndexFrom: 0,
-    tokenIndexTo: 1,
-    poolValues: [1000000n, 100000n],
-  };
-  const expectedOutput = 0n;
-  testGetStableOutputPrice(t, input, expectedOutput);
-});
-
-test('Test : Code with Amounts', t => {
-  const input = {
-    inputValue: 50n,
+    outputAmount: AmountMath.make(brands[0], 2n),
     tokenIndexFrom: 0,
     tokenIndexTo: 1,
     poolValues: createTokenAmounts(),
   };
   const expectedOutput = 0n;
-  testGetStablePrice(t, input, expectedOutput);
+  testGetStableOutputPrice(t, input, expectedOutput);
 });

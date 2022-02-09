@@ -106,7 +106,7 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
       return y;
     }
   }
-  throw new Error('Approximation did not converge');
+  return y;
 };
 
 /**

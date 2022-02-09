@@ -4,7 +4,7 @@ import { assert, details as X } from '@agoric/assert';
 import { Nat } from '@agoric/nat';
 import { natSafeMath } from './safeMath.js';
 
-const { subtract, add, multiply, floorDivide, power } = natSafeMath;
+const { subtract, add, multiply, floorDivide, power, ceilDivide } = natSafeMath;
 
 let __A = 85;
 let A_PRECISION = 100;
@@ -17,6 +17,14 @@ function within10(a, b) {
     return a - b <= 10;
   }
   return b - a <= 10;
+}
+
+function revertConversion(value) {
+  if (Number(value) / Number(BASIS_POINTS) > 0.5) {
+    return floorDivide(value, BASIS_POINTS);
+  } else {
+    return floorDivide(value, BASIS_POINTS);
+  }
 }
 
 /**
@@ -44,11 +52,14 @@ const getD = poolValues => {
     for (let j = 0; j < N_COINS; j++) {
       dp = (dp * d) / multiply(poolValues[j], N_COINS);
     }
+    //Now dp = D^(n+1)/(n^n(prod_X))
     d_prev = d;
+    // d= ((((na*sum)/A_PRECISION)+dp*n)*d)/
     d =
       (((Nat(nA) * sum_x) / Nat(A_PRECISION) + dp * Nat(N_COINS)) * d) /
       (((Nat(nA) - Nat(A_PRECISION)) * Nat(d)) / Nat(A_PRECISION) +
         Nat(N_COINS + 1) * dp);
+    // Now d= nA
     if (within10(d, d_prev)) {
       return d;
     }
@@ -146,12 +157,12 @@ const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee
  * is taken from inputValue
- * @returns {{inputValue:bigint,outputValue:bigint,price:number}} returnValue - the input amount,the amout to be returned
- * and the price of at which exchanged.
+ * @returns {{price:number,convertedPrice:bigint,inputValue:bigint,outputValue:bigint}}
+ * returnValue - the input amount,the amout to be returned  and the price of at which exchanged.
  *
  */
 
-export const getInputPrice3 = (
+export const getStableInputPrice = (
   inputValue,
   tokenIndexFrom,
   tokenIndexTo,
@@ -179,7 +190,16 @@ export const getInputPrice3 = (
     tokenIndexTo,
     poolValues,
   );
-  return { inputValue: inputValueAfterFee, ...output };
+  // let convertedInputValue = revertConversion(inputValueAfterFee);
+  let convertedOutputValue = floorDivide(output.outputValue, BASIS_POINTS);
+
+  let price = Number(convertedOutputValue) / Number(input);
+  return {
+    price: Number(price),
+    convertedPrice: convertedOutputValue / input,
+    inputValue: input,
+    outputValue: convertedOutputValue,
+  };
 };
 
 /**
@@ -192,121 +212,60 @@ export const getInputPrice3 = (
  *
  * @param {any} outputValue - the value of the asset the user wants
  * to get
- * @param {any} inputReserve - the value in the liquidity
- * pool of the asset being spent
- * @param {any} outputReserve - the value in the liquidity
- * pool of the kind of asset to be sent out
+ * @param {number} tokenIndexFrom - index of liquidity of inputReserve
+ * in the reserves array.
+ * @param {number} tokenIndexTo - index of liquidity of outputReserve
+ * in the reserves array.
+ * @param {bigint[]} poolValues - Array of liquidities of each asset.Which is
+ * passed from the contract.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee is taken from
  * outputValue
- * @returns {NatValue} inputValue - the value of input required to purchase output
+ * @returns {{inputValue:bigint,outputValue:bigint,price:number,convertedPrice:bigint}} returnValue - the input amount,the amout to be returned
+ * and the price of at which exchanged. *
  */
-export const getOutputPrice = (
+export const getStableOutputPrice = (
   outputValue,
-  inputReserve,
-  outputReserve,
+  tokenIndexFrom,
+  tokenIndexTo,
+  poolValues,
   feeBasisPoints = 30n,
 ) => {
-  outputValue = Nat(outputValue);
-  inputReserve = Nat(inputReserve);
-  outputReserve = Nat(outputReserve);
-
+  let temp = tokenIndexTo;
+  tokenIndexTo = tokenIndexFrom;
+  tokenIndexFrom = temp;
+  let ouputVal = Nat(outputValue);
+  let inputReserve = Nat(poolValues[tokenIndexFrom]);
+  let outputReserve = Nat(poolValues[tokenIndexTo]);
+  assert(ouputVal > 0n, X`ouputValue ${ouputVal} must be positive`);
   assert(inputReserve > 0n, X`inputReserve ${inputReserve} must be positive`);
   assert(
     outputReserve > 0n,
     X`outputReserve ${outputReserve} must be positive`,
   );
-  assert(
-    outputReserve > outputValue,
-    X`outputReserve ${outputReserve} must be greater than outputValue ${outputValue}`,
-  );
-
+  // Normalizing the inputValue according to Basis_Points
   const oneMinusFeeScaled = subtract(BASIS_POINTS, feeBasisPoints);
-  const numerator = multiply(multiply(outputValue, inputReserve), BASIS_POINTS);
-  const denominator = multiply(
-    subtract(outputReserve, outputValue),
+  poolValues = poolValues.map(value => value * BASIS_POINTS);
+  ouputVal = multiply(ouputVal, BASIS_POINTS);
+  let output = calculateSwap(
+    ouputVal,
+    tokenIndexFrom,
+    tokenIndexTo,
+    poolValues,
+  );
+  output.outputValue = floorDivide(
+    multiply(output.outputValue, BASIS_POINTS),
     oneMinusFeeScaled,
   );
-  return add(floorDivide(numerator, denominator), 1n);
-};
+  let inputVal = floorDivide(output.outputValue, BASIS_POINTS);
+  let outputVal = floorDivide(ouputVal, BASIS_POINTS);
 
-// Calculate how many liquidity tokens we should be minting to send back to the
-// user when adding liquidity. We provide new liquidity equal to the existing
-// liquidity multiplied by the ratio of new central tokens to central tokens
-// already held. If the current supply is zero, return the inputValue as the
-// initial liquidity to mint is arbitrary.
-/**
- *
- * @param {bigint} liqTokenSupply
- * @param {bigint} inputValue
- * @param {bigint} inputReserve
- * @returns {NatValue}
- */
-export const calcLiqValueToMint = (
-  liqTokenSupply,
-  inputValue,
-  inputReserve,
-) => {
-  liqTokenSupply = Nat(liqTokenSupply);
-  inputValue = Nat(inputValue);
-  inputReserve = Nat(inputReserve);
-
-  if (liqTokenSupply === 0n) {
-    return inputValue;
-  }
-  return floorDivide(multiply(inputValue, liqTokenSupply), inputReserve);
-};
-
-/**
- * Calculate how much of the secondary token is required from the user when
- * adding liquidity. We require that the deposited ratio of central to secondary
- * match the current ratio of holdings in the pool.
- *
- * @param {any} centralIn - The value of central assets being deposited
- * @param {any} centralPool - The value of central assets in the pool
- * @param {any} secondaryPool - The value of secondary assets in the pool
- * @param {any} secondaryIn - The value of secondary assets provided. If
- * the pool is empty, the entire amount will be accepted
- * @returns {NatValue} - the amount of secondary required
- */
-export const calcSecondaryRequired = (
-  centralIn,
-  centralPool,
-  secondaryPool,
-  secondaryIn,
-) => {
-  centralIn = Nat(centralIn);
-  centralPool = Nat(centralPool);
-  secondaryPool = Nat(secondaryPool);
-  secondaryIn = Nat(secondaryIn);
-
-  if (centralPool === 0n || secondaryPool === 0n) {
-    return secondaryIn;
-  }
-
-  const scaledSecondary = floorDivide(
-    multiply(centralIn, secondaryPool),
-    centralPool,
-  );
-  const exact =
-    multiply(centralIn, secondaryPool) ===
-    multiply(scaledSecondary, centralPool);
-
-  // doesn't match the x-y-k.pdf paper, but more correct. When the ratios are
-  // exactly equal, lPrime is exactly l * (1 + alpha) and adding one is wrong
-  return exact ? scaledSecondary : 1n + scaledSecondary;
-};
-
-// Calculate how many underlying tokens (in the form of a value) should be
-// returned when removing liquidity.
-export const calcValueToRemove = (
-  liqTokenSupply,
-  poolValue,
-  liquidityValueIn,
-) => {
-  liqTokenSupply = Nat(liqTokenSupply);
-  liquidityValueIn = Nat(liquidityValueIn);
-  poolValue = Nat(poolValue);
-
-  return floorDivide(multiply(liquidityValueIn, poolValue), liqTokenSupply);
+  let price = inputVal === 0n ? 0 : Number(outputVal) / Number(inputVal);
+  let convertedPrice = inputVal === 0n ? 0n : outputVal / inputVal;
+  return {
+    price: price,
+    convertedPrice: convertedPrice,
+    inputValue: inputVal,
+    outputValue: outputVal,
+  };
 };

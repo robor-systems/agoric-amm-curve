@@ -4,14 +4,17 @@ import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 import { AmountMath } from '@agoric/ertp';
 import { AssetKind, makeIssuerKit } from '@agoric/ertp';
 
-import { getInputPrice3 } from '../../../src/contractSupport/index.js';
+import {
+  getStableInputPrice,
+  getStableOutputPrice,
+} from '../../../src/contractSupport/index.js';
 
-const testGetPrice = (
+const testGetStablePrice = (
   t,
   { inputValue, tokenIndexFrom, tokenIndexTo, poolValues },
   expectedOutput,
 ) => {
-  const output = getInputPrice3(
+  const output = getStableInputPrice(
     inputValue,
     tokenIndexFrom,
     tokenIndexTo,
@@ -21,24 +24,76 @@ const testGetPrice = (
   t.deepEqual(output, output);
 };
 
-test('Multiple tokens in the pool', t => {
-  const input = {
-    inputValue: 1000n,
-    tokenIndexFrom: 1,
-    tokenIndexTo: 0,
-    poolValues: [100000n, 100n, 200n, 400n],
-  };
-  const expectedOutput = 0n;
-  testGetPrice(t, input, expectedOutput);
-});
+const testGetStableOutputPrice = (
+  t,
+  { outputValue, tokenIndexFrom, tokenIndexTo, poolValues },
+  expectedOutput,
+) => {
+  const output = getStableOutputPrice(
+    outputValue,
+    tokenIndexFrom,
+    tokenIndexTo,
+    poolValues,
+  );
+  console.log(output);
+  t.deepEqual(output, output);
+};
 
-test('large difference in pool amount', t => {
+// test('Test : Multiple tokens in the pool', t => {
+//   console.log('Test : Multiple tokens in the pool');
+//   const input = {
+//     inputValue: 1000n,
+//     tokenIndexFrom: 1,
+//     tokenIndexTo: 0,
+//     poolValues: [100000n, 100n, 200n, 400n],
+//   };
+//   const expectedOutput = 0n;
+//   testGetStablePrice(t, input, expectedOutput);
+// });
+
+// test('Test : Large difference in liquidities of two assets in pool', t => {
+//   console.log('\nTest : Large difference in pool amount');
+//   const input = {
+//     inputValue: 1839n,
+//     tokenIndexFrom: 0,
+//     tokenIndexTo: 1,
+//     poolValues: [1000000n, 200n],
+//   };
+//   const expectedOutput = 0n;
+//   testGetStablePrice(t, input, expectedOutput);
+// });
+
+test('Test : Large difference in liquidities of two assets in pool2', t => {
+  console.log('\nTest : Input Value');
   const input = {
-    inputValue: 1000n,
+    inputValue: 1839n,
     tokenIndexFrom: 0,
     tokenIndexTo: 1,
     poolValues: [1000000n, 200n],
   };
   const expectedOutput = 0n;
-  testGetPrice(t, input, expectedOutput);
+  testGetStablePrice(t, input, expectedOutput);
+});
+test('Test : Large difference in liquidities of two assets in pool3', t => {
+  console.log('\nTest : Input Value');
+  const input = {
+    inputValue: 1839n,
+    tokenIndexFrom: 0,
+    tokenIndexTo: 1,
+    poolValues: [1000000n, 200n],
+  };
+  const expectedOutput = 0n;
+  testGetStablePrice(t, input, expectedOutput);
+});
+
+test('Test : Output Value', t => {
+  console.log('\nTest : Output Value');
+  const input = {
+    outputValue: 1n,
+    tokenIndexFrom: 0,
+    tokenIndexTo: 1,
+    poolValues: [1000000n, 200n],
+  };
+  const expectedOutput = 0n;
+  testGetStableOutputPrice(t, input, expectedOutput);
 });

@@ -157,7 +157,7 @@ const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee
  * is taken from inputValue
- * @returns {{price:number,convertedPrice:bigint,inputValue:bigint,outputValue:bigint}}
+ * @returns {{price:number,inputValue:bigint,outputValue:bigint}}
  * returnValue - the input amount,the amout to be returned  and the price of at which exchanged.
  *
  */
@@ -196,7 +196,7 @@ export const getStableInputPrice = (
   let price = Number(convertedOutputValue) / Number(input);
   return {
     price: Number(price),
-    convertedPrice: convertedOutputValue / input,
+    // convertedPrice: convertedOutputValue / input,
     inputValue: input,
     outputValue: convertedOutputValue,
   };
@@ -221,8 +221,8 @@ export const getStableInputPrice = (
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee is taken from
  * outputValue
- * @returns {{inputValue:bigint,outputValue:bigint,price:number,convertedPrice:bigint}} returnValue - the input amount,the amout to be returned
- * and the price of at which exchanged. *
+ * @returns {{inputValue:bigint,outputValue:bigint,price:number}} returnValue - 
+ * the input amount,the amout to be returned and the price of at which exchanged.
  */
 export const getStableOutputPrice = (
   outputValue,
@@ -234,10 +234,10 @@ export const getStableOutputPrice = (
   let temp = tokenIndexTo;
   tokenIndexTo = tokenIndexFrom;
   tokenIndexFrom = temp;
-  let ouputVal = Nat(outputValue);
+  let outputVal = Nat(outputValue);
   let inputReserve = Nat(poolValues[tokenIndexFrom]);
   let outputReserve = Nat(poolValues[tokenIndexTo]);
-  assert(ouputVal > 0n, X`ouputValue ${ouputVal} must be positive`);
+  assert(outputVal > 0n, X`ouputValue ${outputVal} must be positive`);
   assert(inputReserve > 0n, X`inputReserve ${inputReserve} must be positive`);
   assert(
     outputReserve > 0n,
@@ -246,25 +246,18 @@ export const getStableOutputPrice = (
   // Normalizing the inputValue according to Basis_Points
   const oneMinusFeeScaled = subtract(BASIS_POINTS, feeBasisPoints);
   poolValues = poolValues.map(value => value * BASIS_POINTS);
-  ouputVal = multiply(ouputVal, BASIS_POINTS);
   let output = calculateSwap(
-    ouputVal,
+    outputVal * BASIS_POINTS,
     tokenIndexFrom,
     tokenIndexTo,
     poolValues,
   );
-  output.outputValue = floorDivide(
-    multiply(output.outputValue, BASIS_POINTS),
-    oneMinusFeeScaled,
-  );
-  let inputVal = floorDivide(output.outputValue, BASIS_POINTS);
-  let outputVal = floorDivide(ouputVal, BASIS_POINTS);
-
+  let inputVal = output.outputValue / oneMinusFeeScaled;
   let price = inputVal === 0n ? 0 : Number(outputVal) / Number(inputVal);
   let convertedPrice = inputVal === 0n ? 0n : outputVal / inputVal;
   return {
     price: price,
-    convertedPrice: convertedPrice,
+    // convertedPrice: convertedPrice,
     inputValue: inputVal,
     outputValue: outputVal,
   };

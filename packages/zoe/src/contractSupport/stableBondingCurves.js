@@ -90,7 +90,7 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   let s = 0n;
   const nA = N_COINS * A;
   let _x = 0n;
-  // sum` - is sum of all pool values apart from the 
+  // sum` - is sum of all pool values apart from the
   // the swap out token's pool value.
   // prod` - is the product of all pool values apart
   // from the swap out token's poolValue.
@@ -123,7 +123,7 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
       return y;
     }
   }
-  throw new Error('Approximation did not converge');
+  return y;
 };
 /**
  * Contains the logic for calculating the stableSwap rate for

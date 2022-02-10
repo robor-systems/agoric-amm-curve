@@ -42,6 +42,8 @@ function revertConversion(value) {
 const getD = poolValues => {
   let N_COINS = poolValues.length;
   let sum_x = 0n;
+
+  // sum_x - Sum of all poolValues.
   for (let i = 0; i < N_COINS; i++) {
     sum_x = sum_x + poolValues[i];
   }
@@ -54,10 +56,17 @@ const getD = poolValues => {
 
   for (let i = 0; i < 1000; i++) {
     let dp = d;
+    // prod - product of all poolvalues
+    // dp = D^(n+1)/n^n(prod)
     for (let j = 0; j < N_COINS; j++) {
       dp = (dp * d) / multiply(poolValues[j], N_COINS);
     }
+
     d_prev = d;
+
+    // numerator = An(sum) + ((D^(n+1)/n^n(prod))*nD)
+    // denominator = ((An-1)*D)+(n+1)(D^(n+1)/n^n(prod))
+    // d = numerator/denominator
     d =
       ((Nat(nA) * sum_x + dp * Nat(N_COINS)) * d) /
       ((Nat(nA) - 1n) * Nat(d) + Nat(N_COINS + 1) * dp);

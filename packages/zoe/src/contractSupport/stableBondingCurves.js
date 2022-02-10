@@ -90,6 +90,12 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   let s = 0n;
   const nA = N_COINS * A;
   let _x = 0n;
+  // sum` - is sum of all pool values apart from the 
+  // the swap out token's pool value.
+  // prod` - is the product of all pool values apart
+  // from the swap out token's poolValue.
+  // s = sum`
+  // c=(D^(n+1))/(n^n)*prod`
   for (let i = 0; i < N_COINS; i++) {
     if (i === tokenIndexFrom) {
       _x = x;
@@ -101,12 +107,17 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
     s = s + _x;
     c = (c * d) / multiply(_x, N_COINS);
   }
+  // c = ([(D^(n+1))/(n^n)*prod`]*d)/(A(n^n))
   c = floorDivide(c * d, nA * N_COINS);
+  // b = s/(D*An)
   const b = s + floorDivide(d, nA);
   let y_prev = 0n;
   let y = d;
   for (let i = 0; i < 1000; i++) {
     y_prev = y;
+    // numerator = ((y^2)+([(D^(n+1))/(n^n)*prod`]*d)/(A(n^n)))
+    // denominator = 2y+ (s/(D*An)) - D
+    // y=  numerator/denominator
     y = (y * y + c) / (multiply(y, 2) + b - d);
     if (within10(y, y_prev)) {
       return y;
@@ -114,7 +125,6 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   }
   throw new Error('Approximation did not converge');
 };
-
 /**
  * Contains the logic for calculating the stableSwap rate for
  * between assets in a pool.Also to returns the amount of token

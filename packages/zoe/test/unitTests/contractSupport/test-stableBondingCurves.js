@@ -9,7 +9,6 @@ import {
   getStableOutputPrice,
 } from '../../../src/contractSupport/index.js';
 
-import { getInputPrice } from '../../../src/contractSupport/index.js';
 
 const coins = ['RUN', 'USDT'];
 const values = [1000000n, 1000000n];

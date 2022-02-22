@@ -65,7 +65,7 @@ const getD = poolValues => {
   }
   let d_prev = 0n;
   let d = sum_x;
-  let nA = A * N_COINS;
+  const nA = A * N_COINS * N_COINS;
 
   for (let i = 0; i < 1000; i++) {
     let dp = d;
@@ -88,8 +88,8 @@ const getD = poolValues => {
     d =
       d -
       (dp + d * (Nat(nA) - 1n) - Nat(nA) * sum_x) /
-      ((dp * (Nat(N_COINS) + 1n)) / d + (Nat(nA) - 1n));
-    
+        ((dp * (Nat(N_COINS) + 1n)) / d + (Nat(nA) - 1n));
+
     if (within10(d, d_prev)) {
       return d;
     }
@@ -117,8 +117,9 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   let N_COINS = poolValues.length;
   let c = d;
   let s = 0n;
-  const nA = N_COINS * A;
+  const Ann = A * N_COINS * N_COINS;
   let _x = 0n;
+  let xi = 0n;
   // sum` - is sum of all pool values apart from the
   // the swap out token's pool value.
   // prod` - is the product of all pool values apart
@@ -128,18 +129,19 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   for (let i = 0; i < N_COINS; i++) {
     if (i === tokenIndexFrom) {
       _x = x;
+      xi = x;
     } else if (i !== tokenIndexTo) {
       _x = poolValues[i];
+      xi = poolValues[i];
     } else {
-      continue;
+      _x = 0n;
+      xi = 1n;
     }
     s = s + _x;
-    c = (c * d) / (_x * Nat(N_COINS));
+    c = (c * d) / (xi * Nat(N_COINS));
   }
-  // c = ([(D^(n+1))/(n^n)*prod`]*d)/(A(n^n))
-  c = (c * d) / Nat(nA * N_COINS);
-  // b = s/(D*An)
-  const b = s + d / Nat(nA);
+  console.log('s:', s);
+  console.log('c:', c);
   let y_prev = 0n;
   let y = d;
   for (let i = 0; i < 1000; i++) {
@@ -147,7 +149,12 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
     // numerator = ((y^2)+([(D^(n+1))/(n^n)*prod`]*d)/(A(n^n)))
     // denominator = 2y+ (s/(D*An)) - D
     // y=  numerator/denominator
-    y = (y * y + c) / (y * 2n + b - d);
+    // y = (y * y + c) / (y * 2n + b - d);
+    // yi+1=yi-((Ann*y^2)+Ann*s*y-d*y*(Ann-1)-c)/(2Ann*y+Ann*s+D(Ann-1))
+    y =
+      y -
+      (Nat(Ann) * (y * y) + Nat(Ann) * s * y - d * y * Nat(Ann - 1) - c) /
+        (Nat(2 * Ann) * y + Nat(Ann) * s - d * Nat(Ann - 1));
     if (within10(y, y_prev)) {
       return y;
     }

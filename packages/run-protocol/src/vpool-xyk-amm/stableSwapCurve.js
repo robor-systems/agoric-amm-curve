@@ -76,13 +76,20 @@ const getD = poolValues => {
     }
 
     d_prev = d;
-
     // numerator = An(sum) + ((D^(n+1)/n^n(prod))*nD)
     // denominator = ((An-1)*D)+(n+1)(D^(n+1)/n^n(prod))
     // d = numerator/denominator
+    // d =
+    //   ((Nat(nA) * sum_x + dp * Nat(N_COINS)) * d) /
+    //   ((Nat(nA) - 1n) * Nat(d) + Nat(N_COINS + 1) * dp);
+
+    // Non simplified form
+    // d = d-(dp+d(nA-1)-nA*sum_x)/(((dp*(n+1))/d)+(nA-1))
     d =
-      ((Nat(nA) * sum_x + dp * Nat(N_COINS)) * d) /
-      ((Nat(nA) - 1n) * Nat(d) + Nat(N_COINS + 1) * dp);
+      d -
+      (dp + d * (Nat(nA) - 1n) - Nat(nA) * sum_x) /
+      ((dp * (Nat(N_COINS) + 1n)) / d + (Nat(nA) - 1n));
+    
     if (within10(d, d_prev)) {
       return d;
     }

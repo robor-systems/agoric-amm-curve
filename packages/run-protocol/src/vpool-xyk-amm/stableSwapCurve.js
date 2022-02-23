@@ -113,7 +113,7 @@ const updatePoolValues = (
  * @returns {bigint} d - the current price, in value form
  *
  */
-const getD = poolValues => {
+export const getD = poolValues => {
   const N_COINS = poolValues.length;
   // sum_x - Sum of all poolValues.
   const sum_x = poolValues.reduce((prev, cur) => prev + cur, 0n);
@@ -161,7 +161,7 @@ const getD = poolValues => {
  * in exchange for amount x of swap in asset.
  */
 
-const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
+export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   const d = getD(poolValues);
   const N_COINS = poolValues.length;
   const Ann = A * N_COINS * N_COINS;

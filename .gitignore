@@ -65,3 +65,5 @@ packages/ui-components/compiled
 packages/ui-components/dist
 packages/zoe/src/contractSupport/stableBondingCurves1.js
 packages/zoe/src/contractSupport/stableBondingCurves2.js
+packages/zoe/src/contractSupport/stableBondingCurves.js
+packages/zoe/test/unitTests/contractSupport/test-stableBondingCurves.js

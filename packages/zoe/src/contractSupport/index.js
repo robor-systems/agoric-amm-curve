@@ -8,11 +8,6 @@ export {
   calcSecondaryRequired,
 } from './bondingCurves.js';
 
-export {
-  getStableInputPrice,
-  getStableOutputPrice,
-} from './stableBondingCurves.js';
-
 export * from './priceAuthority.js';
 
 export {

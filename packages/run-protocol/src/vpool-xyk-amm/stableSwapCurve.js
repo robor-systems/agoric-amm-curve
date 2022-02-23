@@ -12,6 +12,7 @@ import {
 
 const A = 85;
 const BASIS_POINTS = 10000n;
+const maxLoopLimit = 1000;
 
 const within10 = (a, b) => {
   if (a > b) {
@@ -53,43 +54,31 @@ const updatePoolValues = (
  *
  */
 const getD = poolValues => {
-  let N_COINS = poolValues.length;
-  let sum_x = 0n;
-
+  const N_COINS = poolValues.length;
   // sum_x - Sum of all poolValues.
-  for (let i = 0; i < N_COINS; i++) {
-    sum_x = sum_x + poolValues[i];
-  }
+  const sum_x = poolValues.reduce((prev, cur) => prev + cur, 0n);
   if (sum_x === 0n) {
     return 0n;
   }
   let d_prev = 0n;
   let d = sum_x;
-  const nA = A * N_COINS * N_COINS;
-
-  for (let i = 0; i < 1000; i++) {
+  const Ann = A * N_COINS * N_COINS;
+  for (let i = 0; i < maxLoopLimit; i++) {
     let dp = d;
     // prod - product of all poolvalues
     // dp = D^(n+1)/n^n(prod)
     for (let j = 0; j < N_COINS; j++) {
       dp = (dp * d) / (poolValues[j] * Nat(N_COINS));
     }
-
     d_prev = d;
-    // numerator = An(sum) + ((D^(n+1)/n^n(prod))*nD)
-    // denominator = ((An-1)*D)+(n+1)(D^(n+1)/n^n(prod))
-    // d = numerator/denominator
-    // d =
-    //   ((Nat(nA) * sum_x + dp * Nat(N_COINS)) * d) /
-    //   ((Nat(nA) - 1n) * Nat(d) + Nat(N_COINS + 1) * dp);
-
     // Non simplified form
-    // d = d-(dp+d(nA-1)-nA*sum_x)/(((dp*(n+1))/d)+(nA-1))
+    // d = d-(dp+d(Ann-1)-Ann*sum_x)/(((dp*(n+1))/d)+(Ann-1))
     d =
       d -
-      (dp + d * (Nat(nA) - 1n) - Nat(nA) * sum_x) /
-        ((dp * (Nat(N_COINS) + 1n)) / d + (Nat(nA) - 1n));
-
+      (dp + d * (Nat(Ann) - 1n) - Nat(Ann) * sum_x) /
+        ((dp * (Nat(N_COINS) + 1n)) / d + (Nat(Ann) - 1n));
+    // Checks whether the iteration result is to the accuracy
+    // or one more iteration is required.
     if (within10(d, d_prev)) {
       return d;
     }
@@ -114,10 +103,10 @@ const getD = poolValues => {
 
 const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   const d = getD(poolValues);
-  let N_COINS = poolValues.length;
+  const N_COINS = poolValues.length;
+  const Ann = A * N_COINS * N_COINS;
   let c = d;
   let s = 0n;
-  const Ann = A * N_COINS * N_COINS;
   let _x = 0n;
   let xi = 0n;
   // sum` - is sum of all pool values apart from the
@@ -140,16 +129,10 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
     s = s + _x;
     c = (c * d) / (xi * Nat(N_COINS));
   }
-  console.log('s:', s);
-  console.log('c:', c);
   let y_prev = 0n;
   let y = d;
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < maxLoopLimit; i++) {
     y_prev = y;
-    // numerator = ((y^2)+([(D^(n+1))/(n^n)*prod`]*d)/(A(n^n)))
-    // denominator = 2y+ (s/(D*An)) - D
-    // y=  numerator/denominator
-    // y = (y * y + c) / (y * 2n + b - d);
     // yi+1=yi-((Ann*y^2)+Ann*s*y-d*y*(Ann-1)-c)/(2Ann*y+Ann*s+D(Ann-1))
     y =
       y -
@@ -180,7 +163,7 @@ const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
 const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
   const x = dx + poolValues[tokenIndexFrom];
   const y = getY(x, tokenIndexFrom, tokenIndexTo, poolValues);
-  let dy = poolValues[tokenIndexTo] - y;
+  const dy = poolValues[tokenIndexTo] - y;
   return { outputValue: dy };
 };
 /**

@@ -41,8 +41,8 @@ const commonStablePrice = (
   tokenIndexTo,
   feeBasisPoints = 30n,
 ) => {
-  let inputReserve = poolAmounts[tokenIndexFrom];
-  let outputReserve = poolAmounts[tokenIndexTo];
+  const inputReserve = poolAmounts[tokenIndexFrom];
+  const outputReserve = poolAmounts[tokenIndexTo];
   assert(
     inputAmount.value > 0n,
     X`inputValue ${inputAmount.value} must be positive`,
@@ -91,27 +91,27 @@ const commonStablePrice = (
  */
 export const getD = poolValues => {
   const nCoins = BigInt(poolValues.length);
-  // sum_x - Sum of all poolValues.
-  const sum_x = poolValues.reduce((prev, cur) => prev + cur, 0n);
-  if (sum_x === 0n) {
+  // sumX  - Sum of all poolValues.
+  const sumX  = poolValues.reduce((prev, cur) => prev + cur, 0n);
+  if (sumX  === 0n) {
     return 0n;
   }
   let d_prev;
-  let d = sum_x;
+  let d = sumX ;
   const Ann = A * nCoins ** nCoins;
   for (let i = 0; i < MAX_LOOP_LIMIT; i++) {
     let dp = d;
-    // prod - product of all poolvalues
-    // dp = D^(n+1)/n^n(prod)
+    // prodX - product of all poolvalues
+    // dp = D^(n+1)/n^n(prodX)
     for (let j = 0; j < nCoins; j++) {
       dp = (dp * d) / (poolValues[j] * nCoins);
     }
     d_prev = d;
     // Non simplified form
-    // d = d-(dp+d(Ann-1)-Ann*sum_x)/(((dp*(n+1))/d)+(Ann-1))
+    // d = d-(dp+d(Ann-1)-Ann*sumX )/(((dp*(n+1))/d)+(Ann-1))
     d =
       d -
-      (dp + d * (Nat(Ann) - 1n) - Nat(Ann) * sum_x) /
+      (dp + d * (Nat(Ann) - 1n) - Nat(Ann) * sumX ) /
         ((dp * (nCoins + 1n)) / d + (Ann - 1n));
     // Checks whether the iteration result is to the accuracy
     // or one more iteration is required.

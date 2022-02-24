@@ -12,7 +12,7 @@ test('Test getD() : with 3 tokens same value', async t => {
   const output = await getD(values);
   logResults(values, output);
   const expectedOutput = output;
-  t.assert(expectedOutput == 3000000n);
+  t.deepEqual(expectedOutput, 3000000n);
 });
 
 test('Test getD() : with 3 tokens', async t => {
@@ -20,7 +20,7 @@ test('Test getD() : with 3 tokens', async t => {
   const output = await getD(values);
   logResults(values, output);
   const expectedOutput = output;
-  t.assert(expectedOutput > 1000n);
+  t.deepEqual(expectedOutput, 70401n);
 });
 
 test('Test getD() : with 2 tokens ', async t => {
@@ -28,7 +28,7 @@ test('Test getD() : with 2 tokens ', async t => {
   const output = await getD(values);
   logResults(values, output);
   const expectedOutput = output;
-  t.assert(expectedOutput > 1000n);
+  t.deepEqual(expectedOutput, 11075236850n);
 });
 
 test('Test getD() : with 2 tokens having extreme values', async t => {
@@ -36,7 +36,7 @@ test('Test getD() : with 2 tokens having extreme values', async t => {
   const output = await getD(values);
   logResults(values, output);
   const expectedOutput = output;
-  t.assert(expectedOutput > 1000n);
+  t.deepEqual(expectedOutput, 106715442n);
 });
 
 test('Test getD() : with 2 tokens having extreme values but with output value', async t => {
@@ -44,7 +44,7 @@ test('Test getD() : with 2 tokens having extreme values but with output value', 
   const output = await getD(values);
   logResults(values, output);
   const expectedOutput = output;
-  t.assert(expectedOutput >= 1000n);
+  t.deepEqual(expectedOutput, 427379n);
 });
 
 test('Test getD() : testing Output Price result', async t => {
@@ -52,7 +52,7 @@ test('Test getD() : testing Output Price result', async t => {
   const output = await getD(values);
   logResults(values, output);
   const expectedOutput = output;
-  t.assert(expectedOutput >= 1000n);
+  t.deepEqual(expectedOutput, 949792n);
 });
 
 test('Test getD() : testing Output Price result for 3 tokens', async t => {
@@ -60,7 +60,7 @@ test('Test getD() : testing Output Price result for 3 tokens', async t => {
   const output = await getD(values);
   logResults(values, output);
   const expectedOutput = output;
-  t.assert(expectedOutput >= 1000n);
+  t.deepEqual(expectedOutput, 909818n);
 });
 
 test('Test getD() : with 6 tokens different amounts', async t => {
@@ -75,5 +75,5 @@ test('Test getD() : with 6 tokens different amounts', async t => {
   const output = await getD(values);
   logResults(values, output);
   const expectedOutput = output;
-  t.assert(expectedOutput >= 1000n);
+  t.deepEqual(expectedOutput, 2612796423n);
 });

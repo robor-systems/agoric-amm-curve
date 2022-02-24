@@ -9,9 +9,9 @@ import {
   floorDivideBy,
 } from '@agoric/zoe/src/contractSupport/index.js';
 
-const A = 85;
+const A = 85n;
 const BASIS_POINTS = 10000n;
-const maxLoopLimit = 1000;
+const MAX_LOOP_LIMIT = 1000;
 
 const within10 = (a, b) => {
   if (a > b) {
@@ -70,9 +70,9 @@ const commonStablePrice = (
     inputAmountAfterFeeCut.value * BASIS_POINTS,
   );
   const basisRatio = makeRatio(BASIS_POINTS * 100n, inputAmount.brand);
-  let inputAmountWithoutFeeCut = floorMultiplyBy(inputAmount, basisRatio);
+  const inputAmountWithoutFeeCut = floorMultiplyBy(inputAmount, basisRatio);
   // Normalizing the poolValue according to Basis_Points
-  let poolAmountsInBasisPoints = poolAmounts.map(amount => {
+  const poolAmountsInBasisPoints = poolAmounts.map(amount => {
     return floorMultiplyBy(
       amount,
       makeRatio(BASIS_POINTS * 100n, amount.brand),
@@ -80,30 +80,6 @@ const commonStablePrice = (
   });
   const poolValues = poolAmountsInBasisPoints.map(amount => amount.value);
   return { inputAmountAfterFeeCut, inputAmountWithoutFeeCut, poolValues };
-};
-/**
- * Recompute the pool values after a swap is performed
- * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
- *                                passed from the contract.
- * @param {number} tokenIndexFrom - index of amount of inputReserve
- *                                  in the reserves array.
- * @param {number} tokenIndexTo - index of amount of outputReserve
- *                                in the reserves array.
- * @param {bigint} inputTokenValue - the value of swap in token passed in.
- * @param {bigint} outputTokenValue - the value of swap out token returned
- *                                    in exchange
- * @returns {bigint[]} output - recomputed pool values
- */
-const updatePoolValues = (
-  poolValues,
-  tokenIndexFrom,
-  inputTokenValue,
-  tokenIndexTo,
-  outputTokenValue,
-) => {
-  poolValues[tokenIndexFrom] -= inputTokenValue;
-  poolValues[tokenIndexTo] += outputTokenValue;
-  return poolValues;
 };
 
 /**
@@ -114,21 +90,21 @@ const updatePoolValues = (
  *
  */
 export const getD = poolValues => {
-  const N_COINS = poolValues.length;
+  const nCoins = BigInt(poolValues.length);
   // sum_x - Sum of all poolValues.
   const sum_x = poolValues.reduce((prev, cur) => prev + cur, 0n);
   if (sum_x === 0n) {
     return 0n;
   }
-  let d_prev = 0n;
+  let d_prev;
   let d = sum_x;
-  const Ann = A * N_COINS * N_COINS;
-  for (let i = 0; i < maxLoopLimit; i++) {
+  const Ann = A * nCoins ** nCoins;
+  for (let i = 0; i < MAX_LOOP_LIMIT; i++) {
     let dp = d;
     // prod - product of all poolvalues
     // dp = D^(n+1)/n^n(prod)
-    for (let j = 0; j < N_COINS; j++) {
-      dp = (dp * d) / (poolValues[j] * Nat(N_COINS));
+    for (let j = 0; j < nCoins; j++) {
+      dp = (dp * d) / (poolValues[j] * nCoins);
     }
     d_prev = d;
     // Non simplified form
@@ -136,7 +112,7 @@ export const getD = poolValues => {
     d =
       d -
       (dp + d * (Nat(Ann) - 1n) - Nat(Ann) * sum_x) /
-        ((dp * (Nat(N_COINS) + 1n)) / d + (Nat(Ann) - 1n));
+        ((dp * (nCoins + 1n)) / d + (Ann - 1n));
     // Checks whether the iteration result is to the accuracy
     // or one more iteration is required.
     if (within10(d, d_prev)) {
@@ -163,8 +139,8 @@ export const getD = poolValues => {
 
 export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   const d = getD(poolValues);
-  const N_COINS = poolValues.length;
-  const Ann = A * N_COINS * N_COINS;
+  const nCoins = BigInt(poolValues.length);
+  const Ann = A * nCoins ** nCoins;
   let c = d;
   let s = 0n;
   let _x;
@@ -175,7 +151,7 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   // from the swap out token's poolValue.
   // s = sum`
   // c=(D^(n+1))/(n^n)*prod`
-  for (let i = 0; i < N_COINS; i++) {
+  for (let i = 0; i < nCoins; i++) {
     if (i === tokenIndexFrom) {
       _x = x;
       xi = x;
@@ -187,17 +163,17 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
       xi = 1n;
     }
     s += _x;
-    c = (c * d) / (xi * Nat(N_COINS));
+    c = (c * d) / (xi * nCoins);
   }
-  let y_prev = 0n;
+  let y_prev;
   let y = d;
-  for (let i = 0; i < maxLoopLimit; i++) {
+  for (let i = 0; i < MAX_LOOP_LIMIT; i++) {
     y_prev = y;
     // yi+1=yi-((Ann*y^2)+Ann*s*y-d*y*(Ann-1)-c)/(2Ann*y+Ann*s+D(Ann-1))
     y =
       y -
-      (Nat(Ann) * (y * y) + Nat(Ann) * s * y - d * y * Nat(Ann - 1) - c) /
-        (Nat(2 * Ann) * y + Nat(Ann) * s - d * Nat(Ann - 1));
+      (Ann * (y * y) + Ann * s * y - d * y * (Ann - 1n) - c) /
+        (2n * Ann * y + Ann * s - d * (Ann - 1n));
     if (within10(y, y_prev)) {
       return y;
     }

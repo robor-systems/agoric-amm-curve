@@ -4,7 +4,6 @@ import { makeIssuerKit, AmountMath } from '@agoric/ertp';
 import {
   getStableOutputPrice,
   getStableInputPrice,
-  
 } from '@agoric/run-protocol/src/vpool-xyk-amm/stableSwapCurve.js';
 
 const createTokenAmounts = (values, brands) => {
@@ -166,7 +165,7 @@ test('Test outputPrice() : with 3 tokens', async t => {
   const brands = coins.map(coin => makeIssuerKit(coin).brand);
 
   const input = {
-    outputAmount: AmountMath.make(brands[0], 1000n),
+    outputAmount: AmountMath.make(brands[1], 605n),
     tokenIndexFrom: 1,
     tokenIndexTo: 0,
     poolAmounts: createTokenAmounts(values, brands),
@@ -201,7 +200,7 @@ test('Test inputPrice() : testing Output Price result for 3 tokens', async t => 
   );
   logResults(input, output, 0);
   const expectedOutput = output.outputAmount.value;
-  t.assert(expectedOutput > 1000n);
+  t.assert(expectedOutput >= 605n);
 });
 
 test('Test outputPrice() : with 3 tokens different poolAmounts', async t => {
@@ -223,7 +222,7 @@ test('Test outputPrice() : with 3 tokens different poolAmounts', async t => {
   );
   logResults(input, output, 1);
   const expectedOutput = output.inputAmount.value;
-  t.deepEqual(expectedOutput, 141n);
+  t.deepEqual(expectedOutput, 230n);
 });
 
 test('Test inputPrice() : with 3 tokens different amounts and swap through centralToken', async t => {
@@ -232,7 +231,7 @@ test('Test inputPrice() : with 3 tokens different amounts and swap through centr
   const brands = coins.map(coin => makeIssuerKit(coin).brand);
 
   const input = {
-    inputAmount: AmountMath.make(brands[1], 147n),
+    inputAmount: AmountMath.make(brands[1], 230n),
     tokenIndexFrom: 1,
     tokenIndexTo: 2,
     poolAmounts: createTokenAmounts(values, brands),

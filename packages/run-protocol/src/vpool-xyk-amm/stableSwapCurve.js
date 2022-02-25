@@ -6,11 +6,14 @@ import {
   floorMultiplyBy,
   makeRatioFromAmounts,
   floorDivideBy,
+  ceilDivideBy,
 } from '@agoric/zoe/src/contractSupport/index.js';
 
 const A = 85n;
 const BASIS_POINTS = 10000n;
 const MAX_LOOP_LIMIT = 1000;
+const dummyBrand = makeIssuerKit('D').brand;
+const dummyAmount = AmountMath.make(dummyBrand, 1n);
 
 const within10 = (a, b) => {
   if (a > b) {
@@ -66,17 +69,9 @@ const commonStablePrice = (
   // Normalizing input amount according to pool value
   inputAmountAfterFeeCut = AmountMath.make(
     inputAmountAfterFeeCut.brand,
-    inputAmountAfterFeeCut.value * BASIS_POINTS,
+    inputAmountAfterFeeCut.value,
   );
-  const basisRatio = makeRatio(BASIS_POINTS * 100n, inputAmount.brand);
-  const inputAmountWithoutFeeCut = floorMultiplyBy(inputAmount, basisRatio);
-  // Normalizing the poolValue according to Basis_Points
-  // const poolAmountsInBasisPoints = poolAmounts.map(amount => {
-  //   return floorMultiplyBy(
-  //     amount,
-  //     makeRatio(BASIS_POINTS * 100n, amount.brand),
-  //   );
-  // });
+  const inputAmountWithoutFeeCut = inputAmount;
   const poolValues = poolAmounts.map(amount => amount.value);
   const poolBrands = poolAmounts.map(amount => amount.brand);
 
@@ -99,7 +94,6 @@ const commonStablePrice = (
  */
 export const getD = (poolValues, poolBrands) => {
   const nCoins = BigInt(poolValues.length);
-  const dummyBrand = makeIssuerKit('D').brand;
   // sumX  - Sum of all poolValues.
   const sumX = poolValues.reduce((prev, cur) => prev + cur, 0n);
   let d_prev;
@@ -128,14 +122,9 @@ export const getD = (poolValues, poolBrands) => {
       (nCoins + 1n) * dp.numerator.value * d.denominator.value +
         d.numerator.value * BigInt(dp.denominator.value) * a,
     );
-    const dummyAmount = AmountMath.make(dummyBrand, 1n);
     const dprevAmount = floorMultiplyBy(dummyAmount, d_prev);
     dAmount = floorMultiplyBy(dummyAmount, d);
-    console.log('dAmount:', dAmount);
-    console.log('dprevAmount:', dprevAmount);
-    if (Number(dprevAmount.value) - Number(dAmount.value) <= 1) {
-      return d;
-    } else if (Number(dAmount.value) - Number(dprevAmount.value) <= 1) {
+    if (Math.abs(Number(dprevAmount.value) - Number(dAmount.value)) <= 1) {
       return d;
     }
   }
@@ -155,7 +144,7 @@ export const getD = (poolValues, poolBrands) => {
  * passed from the contract.
  * @param {Brand[]} poolBrands - Array of brand of each asset.Which is
  * passed from the contract.
- * @returns {bigint} y - the amount of swap out asset to be returned
+ * @returns {Ratio} y - the amount of swap out asset to be returned
  * in exchange for amount x of swap in asset.
  */
 
@@ -167,42 +156,62 @@ export const getY = (
   poolBrands,
 ) => {
   const d = getD(poolValues, poolBrands);
+  const dAmount = floorMultiplyBy(dummyAmount, d);
   const nCoins = BigInt(poolValues.length);
   const Ann = A * nCoins ** nCoins;
-  let c = d;
-  let s = 0n;
-  let _x;
-  let xi;
   // sum` - is sum of all pool values apart from the
   // the swap out token's pool value.
   // prod` - is the product of all pool values apart
   // from the swap out token's poolValue.
   // s = sum`
   // c=(D^(n+1))/(n^n)*prod`
-  for (let i = 0; i < nCoins; i++) {
-    if (i === tokenIndexFrom) {
-      _x = x;
-      xi = x;
-    } else if (i !== tokenIndexTo) {
-      _x = poolValues[i];
-      xi = poolValues[i];
-    } else {
-      _x = 0n;
-      xi = 1n;
-    }
-    s += _x;
-    c = (c * d) / (xi * nCoins);
-  }
+  const prod =
+    x *
+    poolValues
+      .filter((e, i) => i != tokenIndexTo && i != tokenIndexFrom)
+      .reduce((p, n) => p * n, 1n);
+  const s =
+    x +
+    poolValues
+      .filter((e, i) => i != tokenIndexTo && i != tokenIndexFrom)
+      .reduce((p, n) => p + n, 0n);
+  const c = makeRatio(
+    d.numerator.value ** (nCoins + 1n),
+    dummyBrand,
+    d.denominator.value ** (nCoins + 1n) * nCoins ** nCoins * prod,
+  );
   let y_prev;
   let y = d;
-  for (let i = 0; i < MAX_LOOP_LIMIT; i++) {
+  for (let i = 1; i < MAX_LOOP_LIMIT; i++) {
     y_prev = y;
-    // yi+1=yi-((Ann*y^2)+Ann*s*y-d*y*(Ann-1)-c)/(2Ann*y+Ann*s+D(Ann-1))
-    y =
-      y -
-      (Ann * (y * y) + Ann * s * y - d * y * (Ann - 1n) - c) /
-        (2n * Ann * y + Ann * s - d * (Ann - 1n));
-    if (within10(y, y_prev)) {
+    // if (i % 5 == 0) {
+    //   y_prev = floorMultiplyBy(dummyAmount, y).value;
+    //   y = makeRatio(
+    //     BigInt(d.denominator.value) *
+    //       (Ann * BigInt(y_prev ** 2n) + c.numerator.value),
+    //     dummyBrand,
+    //     c.denominator.value *
+    //       ((2n * Ann * y_prev + Ann * s) * d.denominator.value +
+    //         d.numerator.value * (1n - Ann)),
+    //   );
+    // } else {
+    y = makeRatio(
+      BigInt(d.denominator.value) *
+        (Ann * BigInt(y.numerator.value ** 2n) * c.denominator.value +
+          c.numerator.value * BigInt(y.denominator.value ** 2n)),
+      dummyBrand,
+      BigInt(y.denominator.value) *
+        c.denominator.value *
+        (2n * Ann * y.numerator.value * d.denominator.value +
+          Ann * s * y.denominator.value * d.denominator.value +
+          d.numerator.value * BigInt(y.denominator.value) * (1n - Ann)),
+    );
+    // }
+
+    const yAmount = floorMultiplyBy(dummyAmount, y);
+    const yprevAmount = floorMultiplyBy(dummyAmount, y_prev);
+    console.log('yAmount:', yAmount.value);
+    if (Math.abs(Number(yprevAmount.value) - Number(yAmount.value)) <= 1) {
       return y;
     }
   }
@@ -235,7 +244,9 @@ const calculateSwap = (
 ) => {
   const x = dx + poolValues[tokenIndexFrom];
   const y = getY(x, tokenIndexFrom, tokenIndexTo, poolValues, poolBrands);
-  const dy = poolValues[tokenIndexTo] - y;
+  const dummyAmount = AmountMath.make(dummyBrand, 1n);
+  const yAmount = floorMultiplyBy(dummyAmount, y);
+  const dy = poolValues[tokenIndexTo] - yAmount.value;
   return { outputValue: dy };
 };
 /**
@@ -295,12 +306,9 @@ export const getStableInputPrice = async (
   );
   inputAmountWithoutFeeCut = AmountMath.make(
     inputAmountWithoutFeeCut.brand,
-    inputAmountWithoutFeeCut.value / BASIS_POINTS,
+    inputAmountWithoutFeeCut.value,
   );
-  outputAmount = AmountMath.make(
-    outputAmount.brand,
-    swapResult.outputValue / BASIS_POINTS,
-  );
+  outputAmount = AmountMath.make(outputAmount.brand, swapResult.outputValue);
   return {
     priceRatio: priceRatio,
     inputAmount: inputAmountWithoutFeeCut,
@@ -327,7 +335,7 @@ export const getStableInputPrice = async (
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee is taken from
  * outputValue
- * @returns {Promise<{priceRatio:Ratio,inputAmount:Amount,outputAmount:Amount}>}
+ * @returns {Promise<{inputAmount:Amount,outputAmount:Amount}>}
  * returnValue - the input amount,the amout to be returned and the price of at which exchanged.
  */
 export const getStableOutputPrice = async (
@@ -340,63 +348,23 @@ export const getStableOutputPrice = async (
   let t = tokenIndexTo;
   tokenIndexTo = tokenIndexFrom;
   tokenIndexFrom = t;
-  const basisRatio = makeRatio(BASIS_POINTS * 100n, outputAmount.brand);
-  let outputAmountBasis = floorMultiplyBy(outputAmount, basisRatio);
-  let { inputAmountAfterFeeCut, poolValues } = commonStablePrice(
-    outputAmount,
-    poolAmounts,
-    tokenIndexFrom,
-    tokenIndexTo,
-    feeBasisPoints,
-  );
-  const swapResult = calculateSwap(
-    outputAmountBasis.value,
-    tokenIndexFrom,
-    tokenIndexTo,
-    poolValues,
-  );
-  const inputAmount = AmountMath.make(
-    poolAmounts[tokenIndexTo].brand,
-    swapResult.outputValue,
-  );
   const feeCutRatio = makeRatio(
     BASIS_POINTS - feeBasisPoints,
-    inputAmount.brand,
+    poolAmounts[tokenIndexTo].brand,
     BASIS_POINTS,
-    inputAmount.brand,
+    poolAmounts[tokenIndexTo].brand,
   );
-  // Fee ratio multiplied by inputAmount to get inputAmount After fee cut
-  inputAmountAfterFeeCut = floorDivideBy(inputAmount, feeCutRatio);
-  inputAmountAfterFeeCut = AmountMath.make(
-    inputAmountAfterFeeCut.brand,
-    inputAmountAfterFeeCut.value / BASIS_POINTS,
-  );
-  // Ensure Offer Saftey
   let result;
-  let condition;
-  do {
-    result = await getStableInputPrice(
-      inputAmountAfterFeeCut,
-      tokenIndexTo,
-      tokenIndexFrom,
-      poolAmounts,
-    );
-    condition = result.outputAmount.value < outputAmount.value;
-    if (condition) {
-      let incrementAmount = AmountMath.make(inputAmountAfterFeeCut.brand, 1n);
-      inputAmountAfterFeeCut = AmountMath.add(
-        inputAmountAfterFeeCut,
-        incrementAmount,
-      );
-    }
-  } while (condition);
-  const priceRatio = makeRatioFromAmounts(
-    result.priceRatio.numerator,
-    result.priceRatio.denominator,
+  result = await getStableInputPrice(
+    outputAmount,
+    tokenIndexFrom,
+    tokenIndexTo,
+    poolAmounts,
   );
+  console.log('price ratio:', result.priceRatio);
+  const amount = ceilDivideBy(result.outputAmount, feeCutRatio);
   return {
-    priceRatio: priceRatio,
-    inputAmount: inputAmountAfterFeeCut,
+    inputAmount: amount,
     outputAmount: outputAmount,
   };
 };

@@ -1,7 +1,6 @@
 // @ts-check
 import { assert, details as X } from '@agoric/assert';
-import { Nat } from '@agoric/nat';
-import { AmountMath } from '@agoric/ertp';
+import { makeIssuerKit, AmountMath } from '@agoric/ertp';
 import {
   makeRatio,
   floorMultiplyBy,
@@ -32,7 +31,7 @@ const within10 = (a, b) => {
  *                                in the reserves array.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  *                                        in exchange
- * @returns {{inputAmountAfterFeeCut:Amount, inputAmountWithoutFeeCut:Amount, poolValues: bigint[] }} output - recomputed pool values
+ * @returns {{inputAmountAfterFeeCut:Amount, inputAmountWithoutFeeCut:Amount, poolValues: bigint[],poolBrands:Brand[] }} output - recomputed pool values
  */
 const commonStablePrice = (
   inputAmount,
@@ -72,50 +71,71 @@ const commonStablePrice = (
   const basisRatio = makeRatio(BASIS_POINTS * 100n, inputAmount.brand);
   const inputAmountWithoutFeeCut = floorMultiplyBy(inputAmount, basisRatio);
   // Normalizing the poolValue according to Basis_Points
-  const poolAmountsInBasisPoints = poolAmounts.map(amount => {
-    return floorMultiplyBy(
-      amount,
-      makeRatio(BASIS_POINTS * 100n, amount.brand),
-    );
-  });
-  const poolValues = poolAmountsInBasisPoints.map(amount => amount.value);
-  return { inputAmountAfterFeeCut, inputAmountWithoutFeeCut, poolValues };
+  // const poolAmountsInBasisPoints = poolAmounts.map(amount => {
+  //   return floorMultiplyBy(
+  //     amount,
+  //     makeRatio(BASIS_POINTS * 100n, amount.brand),
+  //   );
+  // });
+  const poolValues = poolAmounts.map(amount => amount.value);
+  const poolBrands = poolAmounts.map(amount => amount.brand);
+
+  return {
+    inputAmountAfterFeeCut,
+    inputAmountWithoutFeeCut,
+    poolValues,
+    poolBrands,
+  };
 };
 
 /**
  * Computes the Stable Swap invariant (D).
  * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
  * passed from the contract.
- * @returns {bigint} d - the current price, in value form
+ * @param {Brand[]} poolBrands - Array of brand of each asset.Which is
+ * passed from the contract.
+ * @returns {Ratio} d - the current price, in value form
  *
  */
-export const getD = poolValues => {
+export const getD = (poolValues, poolBrands) => {
   const nCoins = BigInt(poolValues.length);
+  const dummyBrand = makeIssuerKit('D').brand;
   // sumX  - Sum of all poolValues.
-  const sumX  = poolValues.reduce((prev, cur) => prev + cur, 0n);
-  if (sumX  === 0n) {
-    return 0n;
-  }
+  const sumX = poolValues.reduce((prev, cur) => prev + cur, 0n);
   let d_prev;
-  let d = sumX ;
+  let d = makeRatio(sumX * 100n, dummyBrand);
   const Ann = A * nCoins ** nCoins;
+  const prodX = poolValues.reduce((p, c) => p * c, 1n);
+  const a = Ann - 1n;
+  const Ann_sumX = Ann * sumX;
+  let dAmount = AmountMath.make(dummyBrand, 1n);
   for (let i = 0; i < MAX_LOOP_LIMIT; i++) {
-    let dp = d;
-    // prodX - product of all poolvalues
+    // prodX : product of all poolvalues
     // dp = D^(n+1)/n^n(prodX)
-    for (let j = 0; j < nCoins; j++) {
-      dp = (dp * d) / (poolValues[j] * nCoins);
-    }
+    const dp = makeRatio(
+      d.numerator.value ** (nCoins + 1n),
+      dummyBrand,
+      nCoins ** nCoins * prodX * d.denominator.value ** (nCoins + 1n),
+    );
     d_prev = d;
     // Non simplified form
     // d = d-(dp+d(Ann-1)-Ann*sumX )/(((dp*(n+1))/d)+(Ann-1))
-    d =
-      d -
-      (dp + d * (Nat(Ann) - 1n) - Nat(Ann) * sumX ) /
-        ((dp * (nCoins + 1n)) / d + (Ann - 1n));
-    // Checks whether the iteration result is to the accuracy
-    // or one more iteration is required.
-    if (within10(d, d_prev)) {
+    // val - ndp
+    d = makeRatio(
+      d.numerator.value *
+        (nCoins * dp.numerator.value + Ann_sumX * dp.denominator.value),
+      dummyBrand,
+      (nCoins + 1n) * dp.numerator.value * d.denominator.value +
+        d.numerator.value * BigInt(dp.denominator.value) * a,
+    );
+    const dummyAmount = AmountMath.make(dummyBrand, 1n);
+    const dprevAmount = floorMultiplyBy(dummyAmount, d_prev);
+    dAmount = floorMultiplyBy(dummyAmount, d);
+    console.log('dAmount:', dAmount);
+    console.log('dprevAmount:', dprevAmount);
+    if (Number(dprevAmount.value) - Number(dAmount.value) <= 1) {
+      return d;
+    } else if (Number(dAmount.value) - Number(dprevAmount.value) <= 1) {
       return d;
     }
   }
@@ -133,12 +153,20 @@ export const getD = poolValues => {
  * in the reserves array.
  * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
  * passed from the contract.
+ * @param {Brand[]} poolBrands - Array of brand of each asset.Which is
+ * passed from the contract.
  * @returns {bigint} y - the amount of swap out asset to be returned
  * in exchange for amount x of swap in asset.
  */
 
-export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
-  const d = getD(poolValues);
+export const getY = (
+  x,
+  tokenIndexFrom,
+  tokenIndexTo,
+  poolValues,
+  poolBrands,
+) => {
+  const d = getD(poolValues, poolBrands);
   const nCoins = BigInt(poolValues.length);
   const Ann = A * nCoins ** nCoins;
   let c = d;
@@ -192,13 +220,21 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
  * in the reserves array.
  * @param {bigint[]} poolValues - Array of amount of each asset.Which is
  * passed from the contract.
+ * @param {Brand[]} poolBrands - Array of brand of each asset.Which is
+ * passed from the contract.
  * @returns {{ outputValue: bigint}} outputValue - The amount to swap out and the price.
  *
  */
 
-const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
+const calculateSwap = (
+  dx,
+  tokenIndexFrom,
+  tokenIndexTo,
+  poolValues,
+  poolBrands,
+) => {
   const x = dx + poolValues[tokenIndexFrom];
-  const y = getY(x, tokenIndexFrom, tokenIndexTo, poolValues);
+  const y = getY(x, tokenIndexFrom, tokenIndexTo, poolValues, poolBrands);
   const dy = poolValues[tokenIndexTo] - y;
   return { outputValue: dy };
 };
@@ -234,6 +270,7 @@ export const getStableInputPrice = async (
     inputAmountAfterFeeCut,
     inputAmountWithoutFeeCut,
     poolValues,
+    poolBrands,
   } = commonStablePrice(
     inputAmount,
     poolAmounts,
@@ -246,6 +283,7 @@ export const getStableInputPrice = async (
     tokenIndexFrom,
     tokenIndexTo,
     poolValues,
+    poolBrands,
   );
   let outputAmount = AmountMath.make(
     poolAmounts[tokenIndexTo].brand,

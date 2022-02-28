@@ -69,7 +69,7 @@ test('Test inputPrice() : with 2 tokens ', async t => {
   );
   logResults(input, output, 0);
   const expectedOutput = output.outputAmount.value;
-  t.deepEqual(expectedOutput, 1082n);
+  t.deepEqual(expectedOutput, 1083n);
 });
 
 test('Test inputPrice() : with 2 tokens having extreme values', async t => {

@@ -1,6 +1,6 @@
 // @ts-check
 import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
-import { makeIssuerKit, AmountMath } from '@agoric/ertp';
+import { AmountMath } from '@agoric/ertp';
 import { getD } from '@agoric/run-protocol/src/vpool-xyk-amm/stableSwapCurve.js';
 import { floorMultiplyBy } from '@agoric/zoe/src/contractSupport/index.js';
 
@@ -54,36 +54,36 @@ test('Test getD() : testing Output Price result for 3 tokens', async t => {
   t.deepEqual(dAmount.value, 909817n);
 });
 
-// test('Test getD() : with 6 tokens different amounts', async t => {
-//   const values = [
-//     1000000n,
-//     10000n,
-//     100000n,
-//     1000000n,
-//     344233n,
-//     114243434300004n,
-//   ];
-//   const output = await getD(values);
-//   const dummyAmount = AmountMath.make(output.numerator.brand, 1n);
-//   let dAmount = floorMultiplyBy(dummyAmount, output);
-//   logResults(values, dAmount.value);
-//   t.deepEqual(dAmount.value, 97922945789346n);
-// });
+test('Test getD() : with 6 tokens different amounts', async t => {
+  const values = [
+    1000000n,
+    10000n,
+    100000n,
+    1000000n,
+    344233n,
+    114243434300004n,
+  ];
+  const output = await getD(values);
+  const dummyAmount = AmountMath.make(output.numerator.brand, 1n);
+  let dAmount = floorMultiplyBy(dummyAmount, output);
+  logResults(values, dAmount.value);
+  t.deepEqual(dAmount.value, 2612796422n);
+});
 
-// test('Test getD() : with 2 tokens ', async t => {
-//   const values = [9999999999999n, 10n];
-//   const output = await getD(values);
-//   const dummyAmount = AmountMath.make(output.numerator.brand, 1n);
-//   let dAmount = floorMultiplyBy(dummyAmount, output);
-//   logResults(values, dAmount.value);
-//   t.deepEqual(dAmount.value, 6666666668192n);
-// });
+test('Test getD() : with 2 tokens ', async t => {
+  const values = [9999999999999n, 10n];
+  const output = await getD(values);
+  const dummyAmount = AmountMath.make(output.numerator.brand, 1n);
+  let dAmount = floorMultiplyBy(dummyAmount, output);
+  logResults(values, dAmount.value);
+  t.deepEqual(dAmount.value, 11075236839n);
+});
 
-// test('Test getD() : with 2 tokens having extreme values', async t => {
-//   const values = [1000000000n, 10n];
-//   const output = await getD(values);
-//   const dummyAmount = AmountMath.make(output.numerator.brand, 1n);
-//   let dAmount = floorMultiplyBy(dummyAmount, output);
-//   logResults(values, dAmount.value);
-//   t.deepEqual(dAmount.value, 666668193n);
-// });
+test('Test getD() : with 2 tokens having extreme values', async t => {
+  const values = [1000000000n, 10n];
+  const output = await getD(values);
+  const dummyAmount = AmountMath.make(output.numerator.brand, 1n);
+  let dAmount = floorMultiplyBy(dummyAmount, output);
+  logResults(values, dAmount.value);
+  t.deepEqual(dAmount.value, 23680306n);
+});

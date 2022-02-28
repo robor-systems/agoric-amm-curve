@@ -13,13 +13,6 @@ const MAX_LOOP_LIMIT = 1000;
 const dummyBrand = makeIssuerKit('D').brand;
 const dummyAmount = AmountMath.make(dummyBrand, 1n);
 
-const within10 = (a, b) => {
-  if (a > b) {
-    return a - b <= 10;
-  }
-  return b - a <= 10;
-};
-
 /**
  * Common functionality in getInputAmount and getOuptutAmount
  * @param {Amount} inputAmount - the Amount of the asset sent
@@ -93,36 +86,25 @@ export const getD = poolValues => {
   // sumX  - Sum of all poolValues.
   const sumX = poolValues.reduce((prev, cur) => prev + cur, 0n);
   let d_prev;
-  let d = makeRatio(sumX * 100n, dummyBrand);
+  let d;
   const Ann = A * nCoins ** nCoins;
   const prodX = poolValues.reduce((p, c) => p * c, 1n);
   const a = Ann - 1n;
   const Ann_sumX = Ann * sumX;
-  let dAmount = AmountMath.make(dummyBrand, 1n);
+  d = sumX;
   for (let i = 0; i < MAX_LOOP_LIMIT; i++) {
     // prodX : product of all poolvalues
-    // dp = D^(n+1)/n^n(prodX)
-    const dp = makeRatio(
-      d.numerator.value ** (nCoins + 1n),
-      dummyBrand,
-      nCoins ** nCoins * prodX * d.denominator.value ** (nCoins + 1n),
-    );
     d_prev = d;
-    // numerator = (d*n*(nCoins*dp.n+b(dp.d)))
-    // denominator= (((nCoins+1)*dp.n*d.d )+(d.n*dp.d*a))
-    d = makeRatio(
-      d.numerator.value *
-        (nCoins * dp.numerator.value + Ann_sumX * dp.denominator.value),
-      dummyBrand,
-      (nCoins + 1n) * dp.numerator.value * d.denominator.value +
-        d.numerator.value * BigInt(dp.denominator.value) * a,
-    );
-    const dprevAmount = floorMultiplyBy(dummyAmount, d_prev);
-    dAmount = floorMultiplyBy(dummyAmount, d);
-    if (Math.abs(Number(dprevAmount.value) - Number(dAmount.value)) <= 1) {
+    // dp = D^(n+1)/n^n(prodX)
+    const dp = d ** (nCoins + 1n) / (nCoins ** nCoins * prodX);
+    // d = d(nCoins* dp + Ann_sumX) / ((nCoins +1)*dp + d*a )
+    d = (d * (nCoins * dp + Ann_sumX)) / ((nCoins + 1n) * dp + d * a);
+    if (Math.abs(Number(d_prev) - Number(d)) <= 1) {
+      d = makeRatio(d * 100n, dummyBrand);
       return d;
     }
   }
+  d = makeRatio(d * 100n, dummyBrand);
   return d;
 };
 
@@ -143,7 +125,6 @@ export const getD = poolValues => {
 
 export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   const d = getD(poolValues);
-  const dAmount = floorMultiplyBy(dummyAmount, d);
   const nCoins = BigInt(poolValues.length);
   const Ann = A * nCoins ** nCoins;
   // s - is sum of all pool values apart from the
@@ -296,9 +277,6 @@ export const getStableInputPrice = async (
  * in the reserves array.
  * @param {Amount[]} poolAmounts - Array of amounts of each asset.Which is
  * passed from the contract.
- * @param {bigint} [feeBasisPoints=30n] - the fee taken in
- * basis points. The default is 0.3% or 30 basis points. The fee is taken from
- * outputValue
  * @returns {Promise<{inputAmount:Amount,outputAmount:Amount}>}
  * returnValue - the input amount,the amout to be returned and the price of at which exchanged.
  */
@@ -307,7 +285,6 @@ export const getStableOutputPrice = async (
   tokenIndexFrom,
   tokenIndexTo,
   poolAmounts,
-  feeBasisPoints = 30n,
 ) => {
   let t = tokenIndexTo;
   tokenIndexTo = tokenIndexFrom;
@@ -329,8 +306,6 @@ export const getStableOutputPrice = async (
       tokenIndexFrom,
       poolAmounts,
     );
-    console.log('Input Amount:', inputAmount);
-    console.log('result.outputAmount.value:', result.outputAmount.value);
     if (result.outputAmount.value < outputAmount.value) {
       inputAmount = AmountMath.add(
         inputAmount,

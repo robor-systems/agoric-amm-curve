@@ -146,11 +146,10 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   const dAmount = floorMultiplyBy(dummyAmount, d);
   const nCoins = BigInt(poolValues.length);
   const Ann = A * nCoins ** nCoins;
-  // sum` - is sum of all pool values apart from the
+  // s - is sum of all pool values apart from the
   // the swap out token's pool value.
   // prod` - is the product of all pool values apart
   // from the swap out token's poolValue.
-  // s = sum`
   // c=(D^(n+1))/(n^n)*prod`
   const prod =
     x *
@@ -170,8 +169,9 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   let y_prev;
   let y = d;
   for (let i = 1; i < MAX_LOOP_LIMIT; i++) {
-    
     y_prev = y;
+    // Numerator =  (d.d(A*n**n * (y.n)**2 * (c.d) + (c.n)(y.d)**2))
+    // Denominator = (y.d * c.d (2*A*n**n * d.d + A*n**n * s * y.d * d.d + d.n y.d * (1-A*n**n)))
     y = makeRatio(
       BigInt(d.denominator.value) *
         (Ann * BigInt(y.numerator.value ** 2n) * c.denominator.value +
@@ -185,8 +185,6 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
     );
     const yAmount = floorMultiplyBy(dummyAmount, y);
     const yprevAmount = floorMultiplyBy(dummyAmount, y_prev);
-    console.log('y:', yAmount.value);
-    console.log('yprev:', yprevAmount.value);
     if (Math.abs(Number(yprevAmount.value) - Number(yAmount.value)) <= 1) {
       return y;
     }

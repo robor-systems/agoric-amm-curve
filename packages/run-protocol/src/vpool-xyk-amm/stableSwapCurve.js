@@ -265,7 +265,7 @@ export const getStableOutputPrice = async (
   tokenIndexTo,
   poolAmounts,
 ) => {
-  let t = tokenIndexTo;
+  const t = tokenIndexTo;
   tokenIndexTo = tokenIndexFrom;
   tokenIndexFrom = t;
   let result;

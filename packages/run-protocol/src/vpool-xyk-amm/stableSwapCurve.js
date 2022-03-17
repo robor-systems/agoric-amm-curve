@@ -142,22 +142,17 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
       .reduce((p, n) => p + n, 0n);
 
   // c=(D^(n+1))/(n^n)*prod`
-  const cNum = d ** (nCoins + 1n);
-  const cDen = (nCoins + 1n) * nCoins ** nCoins * prod;
-
+  const c = d ** (nCoins + 1n) / (nCoins ** nCoins * prod);
   let yPrev;
   let y = d;
   let yNum = 1n;
   let yDenom = 1n;
   for (let i = 1; i < MAX_LOOP_LIMIT; i += 1) {
     yPrev = y;
-    // Numerator =  (d.d(A*n**n * (y.n)**2 * (c.d) + (c.n)(y.d)**2))
-    // Denominator = (y.d * c.d (2*A*n**n * d.d + A*n**n * s * y.d * d.d + d.n y.d * (1-A*n**n)))
-    yNum = Ann * yNum ** 2n * cDen + cNum * yDenom ** 2n;
-    yDenom =
-      (yDenom * cDen) *
-      (2n * Ann * yNum + Ann * s * yDenom + d * yDenom * (1n - Ann));
+    yNum = Ann * y ** 2n + c;
+    yDenom = 2n * Ann * y + Ann * s + d * (1n - Ann);
     y = floorDivide(yNum, yDenom);
+    // console.log('Y:', y);
     if (yPrev - y <= 1 && yPrev - y >= -1) {
       console.log(`C: ${i} iterations`);
       break;

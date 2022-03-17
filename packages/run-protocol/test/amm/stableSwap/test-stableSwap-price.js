@@ -1,10 +1,7 @@
 // @ts-check
 import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
-import { makeIssuerKit, AmountMath } from '@agoric/ertp';
-import {
-  getStableOutputPrice,
-  getStableInputPrice,
-} from '@agoric/run-protocol/src/vpool-xyk-amm/stableSwapCurve.js';
+import { AmountMath, makeIssuerKit } from '@agoric/ertp';
+import { getStableInputPrice } from '@agoric/run-protocol/src/vpool-xyk-amm/stableSwapCurve.js';
 
 const createTokenAmounts = (values, brands) => {
   let poolAmounts = [];
@@ -14,17 +11,17 @@ const createTokenAmounts = (values, brands) => {
 const logResults = (input, output, i) => {
   console.log(
     '\nprice Ratio: ',
-    Number(i == 0 ? output.outputAmount.value : input.outputAmount.value) /
-      Number(i == 0 ? input.inputAmount.value : output.inputAmount.value),
+    Number(i === 0 ? output.outputAmount.value : input.outputAmount.value) /
+      Number(i === 0 ? input.inputAmount.value : output.inputAmount.value),
   );
 
   console.log(
     'InputAmount:',
-    i == 0 ? input.inputAmount.value : output.inputAmount.value,
+    i === 0 ? input.inputAmount.value : output.inputAmount.value,
   );
   console.log(
     'OutputAmount:',
-    i == 0 ? output.outputAmount.value : input.outputAmount.value,
+    i === 0 ? output.outputAmount.value : input.outputAmount.value,
   );
 };
 
@@ -244,6 +241,5 @@ test('Test inputPrice() : with 3 tokens different amounts and swap through centr
     input.poolAmounts,
   );
   logResults(input, output, 0);
-  const expectedOutput = output.outputAmount.value;
-  t.deepEqual(expectedOutput, 95769n);
+  t.deepEqual(output.outputAmount.value, 95769n);
 });

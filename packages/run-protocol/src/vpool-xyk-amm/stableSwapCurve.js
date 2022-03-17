@@ -1,17 +1,17 @@
 // @ts-check
 import { assert, details as X } from '@agoric/assert';
-import { makeIssuerKit, AmountMath } from '@agoric/ertp';
+import { AmountMath } from '@agoric/ertp';
 import {
   makeRatio,
   floorMultiplyBy,
   makeRatioFromAmounts,
 } from '@agoric/zoe/src/contractSupport/index.js';
+import { natSafeMath } from '../../../zoe/src/contractSupport/index.js';
 
+const { floorDivide } = natSafeMath;
 const A = 85n;
 const BASIS_POINTS = 10000n;
 const MAX_LOOP_LIMIT = 1000;
-const dummyBrand = makeIssuerKit('D').brand;
-const dummyAmount = AmountMath.make(dummyBrand, 1n);
 
 /**
  * Common functionality in getInputAmount and getOuptutAmount
@@ -76,35 +76,35 @@ const commonStablePrice = (
 
 /**
  * Computes the Stable Swap invariant (D).
+ *
  * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
  * passed from the contract.
- * @returns {Ratio} d - the current price, in value form
+ * @returns {bigint} d - the current price, in value form
  *
  */
 export const getD = poolValues => {
   const nCoins = BigInt(poolValues.length);
   // sumX  - Sum of all poolValues.
   const sumX = poolValues.reduce((prev, cur) => prev + cur, 0n);
-  let d_prev;
-  let d;
+  let dPrev;
+  let d = sumX;
   const Ann = A * nCoins ** nCoins;
+  // prodX : product of all poolvalues
   const prodX = poolValues.reduce((p, c) => p * c, 1n);
   const a = Ann - 1n;
-  const Ann_sumX = Ann * sumX;
-  d = sumX;
-  for (let i = 0; i < MAX_LOOP_LIMIT; i++) {
-    // prodX : product of all poolvalues
-    d_prev = d;
+  const sumXTimesAnn = Ann * sumX;
+  for (let i = 0; i < MAX_LOOP_LIMIT; i += 1) {
+    dPrev = d;
     // dp = D^(n+1)/n^n(prodX)
     const dp = d ** (nCoins + 1n) / (nCoins ** nCoins * prodX);
+
     // d = d(nCoins* dp + Ann_sumX) / ((nCoins +1)*dp + d*a )
-    d = (d * (nCoins * dp + Ann_sumX)) / ((nCoins + 1n) * dp + d * a);
-    if (Math.abs(Number(d_prev) - Number(d)) <= 1) {
-      d = makeRatio(d * 100n, dummyBrand);
-      return d;
+    d = (d * (nCoins * dp + sumXTimesAnn)) / ((nCoins + 1n) * dp + d * a);
+    if (Math.abs(Number(dPrev) - Number(d)) <= 1) {
+      console.log(`D: ${i} iterations`);
+      break;
     }
   }
-  d = makeRatio(d * 100n, dummyBrand);
   return d;
 };
 
@@ -119,10 +119,9 @@ export const getD = poolValues => {
  * in the reserves array.
  * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
  * passed from the contract.
- * @returns {Ratio} y - the amount of swap out asset to be returned
+ * @returns {bigint} y - the amount of swap out asset to be returned
  * in exchange for amount x of swap in asset.
  */
-
 export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   const d = getD(poolValues);
   const nCoins = BigInt(poolValues.length);
@@ -131,47 +130,42 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
   // the swap out token's pool value.
   // prod` - is the product of all pool values apart
   // from the swap out token's poolValue.
-  // c=(D^(n+1))/(n^n)*prod`
   const prod =
     x *
     poolValues
-      .filter((e, i) => i != tokenIndexTo && i != tokenIndexFrom)
+      .filter((e, i) => i !== tokenIndexTo && i !== tokenIndexFrom)
       .reduce((p, n) => p * n, 1n);
   const s =
     x +
     poolValues
-      .filter((e, i) => i != tokenIndexTo && i != tokenIndexFrom)
+      .filter((e, i) => i !== tokenIndexTo && i !== tokenIndexFrom)
       .reduce((p, n) => p + n, 0n);
-  const c = makeRatio(
-    d.numerator.value ** (nCoins + 1n),
-    dummyBrand,
-    d.denominator.value ** (nCoins + 1n) * nCoins ** nCoins * prod,
-  );
-  let y_prev;
+
+  // c=(D^(n+1))/(n^n)*prod`
+  const cNum = d ** (nCoins + 1n);
+  const cDen = (nCoins + 1n) * nCoins ** nCoins * prod;
+
+  let yPrev;
   let y = d;
-  for (let i = 1; i < MAX_LOOP_LIMIT; i++) {
-    y_prev = y;
+  let yNum = 1n;
+  let yDenom = 1n;
+  for (let i = 1; i < MAX_LOOP_LIMIT; i += 1) {
+    yPrev = y;
     // Numerator =  (d.d(A*n**n * (y.n)**2 * (c.d) + (c.n)(y.d)**2))
     // Denominator = (y.d * c.d (2*A*n**n * d.d + A*n**n * s * y.d * d.d + d.n y.d * (1-A*n**n)))
-    y = makeRatio(
-      BigInt(d.denominator.value) *
-        (Ann * BigInt(y.numerator.value ** 2n) * c.denominator.value +
-          c.numerator.value * BigInt(y.denominator.value ** 2n)),
-      dummyBrand,
-      BigInt(y.denominator.value) *
-        c.denominator.value *
-        (2n * Ann * y.numerator.value * d.denominator.value +
-          Ann * s * y.denominator.value * d.denominator.value +
-          d.numerator.value * BigInt(y.denominator.value) * (1n - Ann)),
-    );
-    const yAmount = floorMultiplyBy(dummyAmount, y);
-    const yprevAmount = floorMultiplyBy(dummyAmount, y_prev);
-    if (Math.abs(Number(yprevAmount.value) - Number(yAmount.value)) <= 1) {
-      return y;
+    yNum = Ann * yNum ** 2n * cDen + cNum * yDenom ** 2n;
+    yDenom =
+      (yDenom * cDen) *
+      (2n * Ann * yNum + Ann * s * yDenom + d * yDenom * (1n - Ann));
+    y = floorDivide(yNum, yDenom);
+    if (yPrev - y <= 1 && yPrev - y >= -1) {
+      console.log(`C: ${i} iterations`);
+      break;
     }
   }
   return y;
 };
+
 /**
  * Contains the logic for calculating the stableSwap rate for
  * between assets in a pool.Also to returns the amount of token
@@ -184,18 +178,15 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
  * in the reserves array.
  * @param {bigint[]} poolValues - Array of amount of each asset.Which is
  * passed from the contract.
- * @returns {{ outputValue: bigint}} outputValue - The amount to swap out and the price.
+ * @returns {bigint} outputValue - The amount to swap out and the price.
  *
  */
-
 const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
   const x = dx + poolValues[tokenIndexFrom];
   const y = getY(x, tokenIndexFrom, tokenIndexTo, poolValues);
-  const dummyAmount = AmountMath.make(dummyBrand, 1n);
-  const yAmount = floorMultiplyBy(dummyAmount, y);
-  const dy = poolValues[tokenIndexTo] - yAmount.value;
-  return { outputValue: dy };
+  return poolValues[tokenIndexTo] - y;
 };
+
 /**
  * Contains the logic for calculating how much should be given
  * back to the user in exchange for what they sent in. Reused in
@@ -224,7 +215,7 @@ export const getStableInputPrice = async (
   poolAmounts,
   feeBasisPoints = 30n,
 ) => {
-  let {
+  const {
     inputAmountAfterFeeCut,
     inputAmountWithoutFeeCut,
     poolValues,
@@ -235,29 +226,22 @@ export const getStableInputPrice = async (
     tokenIndexTo,
     feeBasisPoints,
   );
+
   const swapResult = calculateSwap(
     inputAmountAfterFeeCut.value,
     tokenIndexFrom,
     tokenIndexTo,
     poolValues,
   );
-  let outputAmount = AmountMath.make(
-    poolAmounts[tokenIndexTo].brand,
-    swapResult.outputValue,
-  );
+  const outputBrand = poolAmounts[tokenIndexTo].brand;
   const priceRatio = makeRatioFromAmounts(
-    outputAmount,
+    AmountMath.make(outputBrand, swapResult),
     inputAmountWithoutFeeCut,
   );
-  inputAmountWithoutFeeCut = AmountMath.make(
-    inputAmountWithoutFeeCut.brand,
-    inputAmountWithoutFeeCut.value,
-  );
-  outputAmount = AmountMath.make(outputAmount.brand, swapResult.outputValue);
   return {
-    priceRatio: priceRatio,
+    priceRatio,
     inputAmount: inputAmountWithoutFeeCut,
-    outputAmount: outputAmount,
+    outputAmount: AmountMath.make(outputBrand, swapResult),
   };
 };
 
@@ -297,8 +281,8 @@ export const getStableOutputPrice = async (
     tokenIndexTo,
     poolValues,
   );
-  let inputAmount = AmountMath.make(outputAmount.brand, swapResult.outputValue);
-  // Offer Saftey
+  let inputAmount = AmountMath.make(outputAmount.brand, swapResult);
+  // Offer Safety
   do {
     result = await getStableInputPrice(
       inputAmount,
@@ -314,7 +298,7 @@ export const getStableOutputPrice = async (
     }
   } while (result.outputAmount.value < outputAmount.value);
   return {
-    inputAmount: inputAmount,
-    outputAmount: outputAmount,
+    inputAmount,
+    outputAmount,
   };
 };

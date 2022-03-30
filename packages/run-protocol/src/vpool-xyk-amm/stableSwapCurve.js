@@ -246,26 +246,27 @@ export const getStableOutputPrice = async (
   tokenIndexFrom,
   tokenIndexTo,
   poolAmounts,
-  feeBasisPoints = 30n,
 ) => {
-  const t = tokenIndexTo;
-  tokenIndexTo = tokenIndexFrom;
-  tokenIndexFrom = t;
-  let result;
-  const poolValues = poolAmounts.map(amount => amount.value);
-  const swapResult = calculateSwap(
-    outputAmount.value,
+  const { poolValues } = commonStablePrice(
+    outputAmount,
+    poolAmounts,
     tokenIndexFrom,
     tokenIndexTo,
+  );
+  const swapResult = calculateSwap(
+    outputAmount.value,
+    tokenIndexTo,
+    tokenIndexFrom,
     poolValues,
   );
   let inputAmount = AmountMath.make(outputAmount.brand, swapResult);
+  let result;
   // Offer Safety
   do {
     result = await getStableInputPrice(
       inputAmount,
-      tokenIndexTo,
       tokenIndexFrom,
+      tokenIndexTo,
       poolAmounts,
     );
     if (result.outputAmount.value < outputAmount.value) {

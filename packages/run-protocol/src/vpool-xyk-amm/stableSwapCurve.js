@@ -62,12 +62,11 @@ const commonStablePrice = (
     inputAmountAfterFeeCut.brand,
     inputAmountAfterFeeCut.value,
   );
-  const inputAmountWithoutFeeCut = inputAmount;
   const poolValues = poolAmounts.map(amount => amount.value);
 
   return {
     inputAmountAfterFeeCut,
-    inputAmountWithoutFeeCut,
+    inputAmountWithoutFeeCut: inputAmount,
     poolValues,
   };
 };
@@ -197,7 +196,7 @@ const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee
  * is taken from inputValue
- * @returns {Promise<{priceRatio:Ratio,inputAmount:Amount,outputAmount:Amount}>}
+ * @returns {Promise<{inputAmount:Amount,outputAmount:Amount}>}
  * returnValue - the input amount,the amout to be returned  and the price of at which exchanged.
  *
  */
@@ -227,12 +226,7 @@ export const getStableInputPrice = async (
     poolValues,
   );
   const outputBrand = poolAmounts[tokenIndexTo].brand;
-  const priceRatio = makeRatioFromAmounts(
-    AmountMath.make(outputBrand, swapResult),
-    inputAmountWithoutFeeCut,
-  );
   return {
-    priceRatio,
     inputAmount: inputAmountWithoutFeeCut,
     outputAmount: AmountMath.make(outputBrand, swapResult),
   };

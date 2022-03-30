@@ -25,14 +25,13 @@ const MAX_LOOP_LIMIT = 1000;
  *                                in the reserves array.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  *                                        in exchange
- * @returns {{inputAmountAfterFeeCut:Amount, inputAmountWithoutFeeCut:Amount, poolValues: bigint[]}} output - recomputed pool values
+ * @returns {{poolValues: bigint[]}} output - recomputed pool values
  */
 const commonStablePrice = (
   inputAmount,
   poolAmounts,
   tokenIndexFrom,
   tokenIndexTo,
-  feeBasisPoints = 30n,
 ) => {
   const inputReserve = poolAmounts[tokenIndexFrom];
   const outputReserve = poolAmounts[tokenIndexTo];
@@ -48,25 +47,9 @@ const commonStablePrice = (
     outputReserve.value > 0n,
     X`outputReserve ${outputReserve.value} must be positive`,
   );
-  // Fee ratio calculation
-  const feeCutRatio = makeRatio(
-    BASIS_POINTS - feeBasisPoints,
-    inputAmount.brand,
-    BASIS_POINTS,
-    inputAmount.brand,
-  );
-  // Fee ratio multiplied by inputAmount to get inputAmount After fee cut
-  let inputAmountAfterFeeCut = floorMultiplyBy(inputAmount, feeCutRatio);
-  // Normalizing input amount according to pool value
-  inputAmountAfterFeeCut = AmountMath.make(
-    inputAmountAfterFeeCut.brand,
-    inputAmountAfterFeeCut.value,
-  );
   const poolValues = poolAmounts.map(amount => amount.value);
 
   return {
-    inputAmountAfterFeeCut,
-    inputAmountWithoutFeeCut: inputAmount,
     poolValues,
   };
 };
@@ -98,7 +81,6 @@ export const getD = poolValues => {
     // d = d(nCoins* dp + Ann_sumX) / ((nCoins +1)*dp + d*a )
     d = (d * (nCoins * dp + sumXTimesAnn)) / ((nCoins + 1n) * dp + d * a);
     if (Math.abs(Number(dPrev) - Number(d)) <= 1) {
-      console.log(`D: ${i} iterations`);
       break;
     }
   }
@@ -151,7 +133,6 @@ export const getY = (x, tokenIndexFrom, tokenIndexTo, poolValues) => {
     y = floorDivide(yNum, yDenom);
     // console.log('Y:', y);
     if (yPrev - y <= 1 && yPrev - y >= -1) {
-      console.log(`C: ${i} iterations`);
       break;
     }
   }
@@ -207,18 +188,26 @@ export const getStableInputPrice = async (
   poolAmounts,
   feeBasisPoints = 30n,
 ) => {
-  const {
-    inputAmountAfterFeeCut,
-    inputAmountWithoutFeeCut,
-    poolValues,
-  } = commonStablePrice(
+  const { poolValues } = commonStablePrice(
     inputAmount,
     poolAmounts,
     tokenIndexFrom,
     tokenIndexTo,
-    feeBasisPoints,
   );
-
+  // Fee ratio calculation
+  const feeCutRatio = makeRatio(
+    BASIS_POINTS - feeBasisPoints,
+    inputAmount.brand,
+    BASIS_POINTS,
+    inputAmount.brand,
+  );
+  // Fee ratio multiplied by inputAmount to get inputAmount After fee cut
+  let inputAmountAfterFeeCut = floorMultiplyBy(inputAmount, feeCutRatio);
+  // Normalizing input amount according to pool value
+  inputAmountAfterFeeCut = AmountMath.make(
+    inputAmountAfterFeeCut.brand,
+    inputAmountAfterFeeCut.value,
+  );
   const swapResult = calculateSwap(
     inputAmountAfterFeeCut.value,
     tokenIndexFrom,
@@ -227,7 +216,7 @@ export const getStableInputPrice = async (
   );
   const outputBrand = poolAmounts[tokenIndexTo].brand;
   return {
-    inputAmount: inputAmountWithoutFeeCut,
+    inputAmount,
     outputAmount: AmountMath.make(outputBrand, swapResult),
   };
 };
@@ -251,11 +240,13 @@ export const getStableInputPrice = async (
  * @returns {Promise<{inputAmount:Amount,outputAmount:Amount}>}
  * returnValue - the input amount,the amout to be returned and the price of at which exchanged.
  */
+
 export const getStableOutputPrice = async (
   outputAmount,
   tokenIndexFrom,
   tokenIndexTo,
   poolAmounts,
+  feeBasisPoints = 30n,
 ) => {
   const t = tokenIndexTo;
   tokenIndexTo = tokenIndexFrom;

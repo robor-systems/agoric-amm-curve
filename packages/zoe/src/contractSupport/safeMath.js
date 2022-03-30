@@ -19,12 +19,5 @@ export const natSafeMath = harden({
     y = Nat(y);
     return Nat(Nat(x) + y - 1n) / y;
   },
-  power: (x, y) => {
-    let result = 1n;
-    for (let i = 0; i < y; i++) {
-      result *= Nat(x);
-    }
-    return result;
-  },
   isGTE: (x, y) => x >= y,
 });

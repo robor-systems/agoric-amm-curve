@@ -25,7 +25,7 @@ const MAX_LOOP_LIMIT = 1000;
  *                                in the reserves array.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  *                                        in exchange
- * @returns {{inputAmountAfterFeeCut:Amount, inputAmountWithoutFeeCut:Amount, poolValues: bigint[],poolBrands:Brand[] }} output - recomputed pool values
+ * @returns {{inputAmountAfterFeeCut:Amount, inputAmountWithoutFeeCut:Amount, poolValues: bigint[]}} output - recomputed pool values
  */
 const commonStablePrice = (
   inputAmount,
@@ -64,13 +64,11 @@ const commonStablePrice = (
   );
   const inputAmountWithoutFeeCut = inputAmount;
   const poolValues = poolAmounts.map(amount => amount.value);
-  const poolBrands = poolAmounts.map(amount => amount.brand);
 
   return {
     inputAmountAfterFeeCut,
     inputAmountWithoutFeeCut,
     poolValues,
-    poolBrands,
   };
 };
 
